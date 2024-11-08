@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZ Apply</title>
+    <link href="../dist/styles.css" rel="stylesheet">
+</head>
+<body>
+    <!--header section-->
+    <header class="w-full h-20 bg-gray-50 flex justify-between items-center px-8 border-b border-gray-300 shadow-sm">
+        <!-- Logo -->
+        <div class="text-2xl font-bold">
+            <img src="./images/logoez.png" alt="EZ Apply Logo" class="h-24">
+        </div>
+      
+        <!-- Navigation Links -->
+        <nav class="hidden md:flex space-x-8 text-gray-700 font-medium">
+          <a href="#ai-features" class="hover:text-blue-500">AI Features</a>
+          <a href="#pricing" class="hover:text-blue-500">Pricing</a>
+        </nav>
+      
+        <!-- CTA Button -->
+        <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Try Now
+        </a>
+    </header>
+
+   <!-- Main Content Container -->
+<div class="relative w-full py-10">
+    <!-- Three Column Layout with Extended Width -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Left Email Card -->
+        <div class="relative px-4 md:px-0">
+            <div class="md:ml-8 w-full md:max-w-xs bg-white rounded-xl shadow-lg border border-gray-200 p-4 transform rotate-3">
+                <h4 class="text-xs text-gray-700 font-semibold mb-2">New email</h4>
+                <div class="text-xs text-gray-700 mb-2">To: <span class="font-semibold">hr@company.co</span></div>
+                <div class="text-xs text-gray-700 mb-2">Subject: Checking In on CEO Application</div>
+                <p class="text-xs text-gray-600 mt-4 leading-tight">
+                    Hi John, <br>
+                    Hope this email finds you well! Just a friendly ping on my application for the CEO position at AIApply.
+                    Given my background with SpaceX and passion for space exploration, I believe I could bring some unique
+                    perspectives to the table. It's not every day you get an application from someone who's sent a car to orbit Mars, right? 😉
+                </p>
+                <p class="text-xs text-gray-600 mt-2">Cheers, <br> Elon</p>
+            </div>
+        </div>
+
+        <!-- Center Eye Catcher Section -->
+        <div class="flex flex-col items-center gap-6 px-4">
+            <!-- Social Proof -->
+            <div class="flex items-center gap-4">
+                <!-- Avatars -->
+                <div class="flex -space-x-2">
+                    <img src="./images/av1.jpeg" alt="User 1" class="w-11 h-11 rounded-full object-cover border-2 border-white">
+                    <img src="./images/av2.jpg" alt="User 2" class="w-11 h-11 rounded-full object-cover border-2 border-white">
+                    <img src="./images/av3.jpg" alt="User 3" class="w-11 h-11 rounded-full object-cover border-2 border-white">
+                    <img src="./images/av4.jpeg" alt="User 4" class="w-11 h-11 rounded-full object-cover border-2 border-white">
+                    <img src="./images/av5.jpg" alt="User 5" class="w-11 h-11 rounded-full object-cover border-2 border-white">
+                    <img src="./images/av6.jpeg" alt="User 6" class="w-11 h-11 rounded-full object-cover border-2 border-white">
+                </div>
+                <!-- Followers Count -->
+                <div class="text-gray-600 text-xl font-semibold">20k+</div>
+                <!-- Rating Box -->
+                <div class="flex items-center bg-white shadow-md px-4 py-2 rounded-md">
+                    <span class="text-yellow-500">★ ★ ★ ★ ★</span>
+                </div>
+            </div>
+
+            <!-- Main Heading -->
+            <div class="text-center">
+                <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">Automate Your Job Search!</h1>
+            </div>
+
+            <!-- Subheading -->
+            <p class="text-center text-gray-600 text-lg max-w-2xl">
+                Your job search shouldn't be a job. Apply to more jobs effortlessly
+            </p>
+
+            <!-- Call-to-Action Button -->
+            <a href="login.html" class="bg-blue-600 text-white px-8 py-3 rounded-lg shadow-lg inline-flex items-center gap-2 hover:bg-blue-700">
+                Get Started
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </a>
+            </div>
+        
+
+        <!-- Right Email Card -->
+        <div class="relative px-4 md:px-0">
+            <div class="md:mr-8 w-full md:max-w-xs ml-auto bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-4 transform -rotate-2">
+                <h4 class="text-xs text-gray-700 font-semibold mb-2">Dear HR Manager,</h4>
+                <p class="text-xs text-gray-600 mt-2 leading-tight">
+                    I'm reaching out about the engineering gig at AIApply. You're looking for an innovator and boundary-pusher in tech. Well, guess what? That's exactly my jam.
+                    <br><br>
+                    You might've heard of a little company called SpaceX. As the CEO and lead designer, I turned the aerospace industry on its head. Reusable rockets? Commercial trips to Mars? That was all me.
+                </p>
+                <p class="text-xs text-gray-600 mt-2">Best, <br> Elon</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+    
+    <!-- Features Section -->
+    <div id="ai-features" class="w-full max-w-7xl mx-auto py-16 px-4 scroll-mt-24">
+        <div class="flex flex-col items-center gap-[30px] mb-16">
+            <div class="text-center flex flex-col items-center">
+                <div class="text-[#0c0c0c] text-5xl font-medium font-['SF Pro Display'] leading-[60px] mb-4">
+                    AI Features
+                </div>
+                <div class="text-[#666666] text-xl font-normal font-['SF Pro Display'] leading-[34px] max-w-4xl mx-auto text-center">
+                    From applying to tracking to preparing for interviews, EZApply simplifies every step of the job hunt, so you can focus on landing the role that's right for you.
+                </div>
+            </div>
+        </div>
+    
+        <!-- Three Feature Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- AI-Powered Applications -->
+            <div class="bg-[#f8f9fa] rounded-3xl p-8">
+                <div class="flex flex-col gap-8">
+                    <div class="w-[72px] h-[72px] bg-[#004aad] rounded-3xl flex items-center justify-center">
+                        <div class="w-[45px] h-[45px] relative">
+                            <img class="w-[45px] h-[45px]" src="./images/intelligence.png" alt="AI Icon" />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <div class="text-black text-2xl font-medium font-['SF Pro Display']">
+                            AI Job Search
+                        </div>
+                        <div class="text-neutral-500 text-base font-normal font-['SF Pro Display'] leading-relaxed">
+                            Our AI finds new jobs for YOU daily and applies directly to them automatically saving you hours of searching
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- ai res n CL -->
+            <div class="bg-[#f8f9fa] rounded-3xl p-8">
+                <div class="flex flex-col gap-8">
+                    <div class="w-[72px] h-[72px] bg-[#004aad] rounded-3xl flex items-center justify-center">
+                        <div class="w-[45px] h-[45px] relative">
+                            <img class="w-[45px] h-[45px]" src="./images/human-resources.png" alt="Tracking Icon" />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <div class="text-black text-2xl font-medium font-['SF Pro Display']">
+                            AI Resumes & Cover Letters
+                        </div>
+                        <div class="text-neutral-500 text-base font-normal font-['SF Pro Display'] leading-relaxed">
+                            Simply tell us your normal application info and our AI will match your experience to fit keywords based on each job description 
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- smart search-->
+            <div class="bg-[#f8f9fa] rounded-3xl p-8">
+                <div class="flex flex-col gap-8">
+                    <div class="w-[72px] h-[72px] bg-[#004aad] rounded-3xl flex items-center justify-center">
+                        <div class="w-[45px] h-[45px] relative">
+                            <img class="w-[45px] h-[45px]" src="./images/feedback.png" alt="Interview Icon" />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <div class="text-black text-2xl font-medium font-['SF Pro Display']">
+                            Smart Search System
+                        </div>
+                        <div class="text-neutral-500 text-base font-normal font-['SF Pro Display'] leading-relaxed">
+                            Like or dislike jobs you've applied to and our AI will adjust to your preference and find you the perfect fit
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trusted by Top Companies Section -->
+    <div class="flex flex-col items-center gap-8 py-10">
+        <!-- Section Heading -->
+        <h2 class="text-center text-gray-600 text-2xl font-semibold uppercase tracking-tight">
+            Get Hired at Top Companies
+        </h2>
+
+        <!-- Company Logos -->
+        <div class="flex justify-center items-center gap-10 flex-wrap">
+            <img src="./images/corp logos/job1.jpeg" alt="Company 1 Logo" class="w-auto h-24 object-contain">
+            <img src="./images/corp logos/job7.png" alt="Company 2 Logo" class="w-auto h-24 object-contain">
+            <img src="./images/corp logos/job3.jpeg" alt="Company 3 Logo" class="w-40 h-12 object-contain">
+            <img src="./images/corp logos/job4.jpeg" alt="Company 4 Logo" class="w-auto h-24 object-contain">
+            <img src="./images/corp logos/job5.png" alt="Company 5 Logo" class="w-auto h-24 object-contain">
+            <img src="./images/corp logos/job6.jpeg" alt="Company 6 Logo" class="w-auto h-24 object-contain">
+        </div>
+    </div>
+</body>
+</html>
+
+<!-- Testimonials Section -->
+<div class="w-full py-24 bg-[#0a3e84]/10">
+    <div class="max-w-7xl mx-auto px-4">
+        <!-- Section Header -->
+        <div class="flex flex-col items-center text-center mb-16">
+            <div class="bg-[#004aad] rounded-[121px] px-6 py-2 mb-6">
+                <div class="text-white text-lg font-medium font-['SF Pro Display']">
+                    Trusted by 20,000+ clients
+                </div>
+            </div>
+            <h2 class="text-[#0c0c0c] text-5xl font-medium font-['SF Pro Display'] capitalize mb-6">
+                We help job seekers succeed
+            </h2>
+            <p class="text-[#666666] text-xl font-normal font-['SF Pro Display'] leading-[34px] max-w-4xl">
+                Lorem Ipsum has been the industry's standard dummy text ever since the when an unknown printer took a galley of type and scrambled it to make a type...
+            </p>
+        </div>
+
+        <!-- Testimonial Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Testimonial Card 1 -->
+            <div class="bg-white rounded-xl shadow p-8">
+                <div class="flex flex-col gap-6">
+                    <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display'] leading-[29px]">
+                    I used to spend hours each day filling out applications, but this service changed everything! Now, I just tell it what I’m looking for, and it finds jobs and applies for me automatically. It even handles CAPTCHA challenges, which is a huge time-saver. I’ve already had multiple interview callbacks thanks to the applications it sent on my behalf!
+                    </p>
+                    <!-- Star Rating -->
+                    <div class="flex gap-2">
+                        <span class="text-yellow-500">★★★★★</span>
+                    </div>
+                    <!-- User Info -->
+                    <div class="flex items-center gap-4">
+                        <img class="w-16 h-16 rounded-full object-cover" src="/Users/ericgreen/Desktop/web app/EZ/src/images/av6.jpeg" alt="Camille Clark" />
+                        <div>
+                            <h4 class="text-[#001a32] text-xl font-semibold font-['SF Pro Display']">Jack Woodson</h4>
+                            <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display']">Platform User</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial Card 2 -->
+            <div class="bg-white rounded-xl shadow p-8">
+                <div class="flex flex-col gap-6">
+                    <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display'] leading-[29px]">
+                        Applying to jobs is a job in itself, but this service has taken the burden off my shoulders. I set my preferences, and it scrapes the web to find perfect matches, tailoring each application to the job. I didn’t think it would be this easy to get my resume in front of so many employers!
+                    </p>
+                    <!-- Star Rating -->
+                    <div class="flex gap-2">
+                        <span class="text-yellow-500">★★★★★</span>
+                    </div>
+                    <!-- User Info -->
+                    <div class="flex items-center gap-4">
+                        <img class="w-16 h-16 rounded-full object-cover" src="/Users/ericgreen/Desktop/web app/EZ/src/images/av5.jpg" alt="Camille Clark" />
+                        <div>
+                            <h4 class="text-[#001a32] text-xl font-semibold font-['SF Pro Display']">Camille Clemmons</h4>
+                            <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display']">Platform User</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial Card 3 -->
+            <div class="bg-white rounded-xl shadow p-8">
+                <div class="flex flex-col gap-6">
+                    <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display'] leading-[29px]">
+                    I can’t believe how many applications it sends out on my behalf. The CAPTCHA bypass feature is amazing—no more getting stuck on tricky forms! I love that I can just focus on preparing for interviews rather than applying over and over. If you’re job hunting, you need this!
+                    </p>
+                    <!-- Star Rating -->
+                    <div class="flex gap-2">
+                        <span class="text-yellow-500">★★★★★</span>
+                    </div>
+                    <!-- User Info -->
+                    <div class="flex items-center gap-4">
+                        <img class="w-16 h-16 rounded-full object-cover" src="/Users/ericgreen/Desktop/web app/EZ/src/images/av4.jpeg" alt="Camille Clark" />
+                        <div>
+                            <h4 class="text-[#001a32] text-xl font-semibold font-['SF Pro Display']">Leslie Clark</h4>
+                            <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display']">Platform User</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial Card 4 -->
+            <div class="bg-white rounded-xl shadow p-8">
+                <div class="flex flex-col gap-6">
+                    <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display'] leading-[29px]">
+                        This service does all the heavy lifting. From finding jobs that fit my criteria to automatically sending applications, it’s like having a virtual assistant for my job search. I’m especially impressed by how well it matches my resume to each role, which I’m sure has boosted my responses!
+                    </p>
+                    <!-- Star Rating -->
+                    <div class="flex gap-2">
+                        <span class="text-yellow-500">★★★★★</span>
+                    </div>
+                    <!-- User Info -->
+                    <div class="flex items-center gap-4">
+                        <img class="w-16 h-16 rounded-full object-cover" src="/Users/ericgreen/Desktop/web app/EZ/src/images/av2.jpg" alt="Camille Clark" />
+                        <div>
+                            <h4 class="text-[#001a32] text-xl font-semibold font-['SF Pro Display']">Simon Mcgregor</h4>
+                            <p class="text-[#010101]/60 text-lg font-normal font-['SF Pro Display']">Platform User</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <style>
+            html {
+                scroll-behavior: smooth;
+            }
+        </style>
+        
+   <!-- Pricing Section -->
+<div id="pricing" class="w-full py-24 px-4" scroll-mt-20>
+    <div class="max-w-7xl mx-auto">
+        <!-- Section Header -->
+        <div class="flex flex-col items-center text-center mb-16">
+            <h2 class="text-[#0c0c0c] text-5xl font-medium font-['SF Pro Display'] capitalize mb-6 text-center mx-auto">
+                Subscription Plans
+            </h2>
+            <p class="text-[#666666] text-xl font-normal font-['SF Pro Display'] leading-[34px] max-w-4xl text-center mx-auto">
+                Lorem Ipsum has been the industry's standard dummy text ever since the when an unknown printer took a galley of type and scrambled it to make a type...
+            </p>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <!-- Basic Plan -->
+            <div class="relative bg-[#f9f9f9] rounded-xl p-8 h-[700px] flex flex-col">
+                <!-- Decorative Circle -->
+                <div class="absolute -left-36 -top-32 w-[372px] h-[372px] bg-[#dfe0e8]/30 rounded-full"></div>
+                
+                <!-- Plan Content -->
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex flex-col gap-3 mb-12">
+                        <span class="text-[#004aad] text-xl">Basic Plan</span>
+                        <div class="flex items-baseline">
+                            <span class="text-[#004aad] text-[38px] font-semibold">$29</span>
+                            <span class="text-[#262b3c]/60 text-lg ml-2">/month</span>
+                        </div>
+                        <p class="text-[#262b3c]/70 text-lg leading-loose">
+                            Perfect for chaning industries or companies.
+                        </p>
+                    </div>
+
+                    <div class="border-t border-[#262b3c]/10 py-6">
+                        <h3 class="text-[#004aad] text-xl mb-8">Features</h3>
+                        <div class="text-[#262b3c]/70 text-lg leading-loose">
+                            100 job applications per month
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <button class="w-[218px] h-[65px] bg-[#004aad] text-white text-xl rounded-xl">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Standard Plan (Featured) -->
+            <div class="relative bg-[#004aad] rounded-xl p-8 h-[700px] flex flex-col">
+                <!-- Decorative Circles -->
+                <div class="absolute right-0 -top-24 w-[372px] h-[372px] bg-white/10 rounded-full"></div>
+                <div class="absolute -left-12 bottom-0 w-[280px] h-[280px] bg-white/10 rounded-full"></div>
+
+                <!-- Plan Content -->
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex flex-col gap-3 mb-12">
+                        <span class="text-white text-xl">Standard Plan</span>
+                        <div class="flex items-baseline">
+                            <span class="text-white text-[38px] font-semibold">$49</span>
+                            <span class="text-white text-lg ml-2">/month</span>
+                        </div>
+                        <p class="text-white text-lg leading-loose">
+                            Ideal for mid-sized firms looking for advanced features and higher limits.
+                        </p>
+                    </div>
+
+                    <div class="border-t border-white/70 py-6">
+                        <h3 class="text-white text-xl mb-8">Features</h3>
+                        <div class="text-white text-lg leading-loose space-y-6">
+                            <div>2500 job applications per month</div>
+                            <div>Adds resume optimization</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <button class="w-[218px] h-[65px] bg-white text-[#004aad] text-xl rounded-xl">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Premium Plan -->
+            <div class="relative bg-[#f9f9f9] rounded-xl p-8 h-[700px] flex flex-col">
+                <!-- Decorative Circle -->
+                <div class="absolute right-0 bottom-0 w-[372px] h-[372px] bg-[#dfe0e8]/30 rounded-full"></div>
+
+                <!-- Plan Content -->
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="flex flex-col gap-3 mb-12">
+                        <span class="text-[#004aad] text-xl">Premium Plan</span>
+                        <div class="flex items-baseline">
+                            <span class="text-[#004aad] text-[38px] font-semibold">$79</span>
+                            <span class="text-[#262b3c]/60 text-lg ml-2">/month</span>
+                        </div>
+                        <p class="text-[#262b3c]/70 text-lg leading-loose">
+                            Best for large organizations needing extensive analysis capabilities.
+                        </p>
+                    </div>
+
+                    <div class="border-t border-[#262b3c]/10 py-6">
+                        <h3 class="text-[#004aad] text-xl mb-8">Features</h3>
+                        <div class="text-[#262b3c]/70 text-lg leading-loose space-y-6">
+                            <div> job applications per month</div>
+                            <div>AI Custom resumes for every application</div>
+                            <div>AI Custom cover letter for every job</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <button class="w-[218px] h-[65px] bg-[#004aad] text-white text-xl rounded-xl">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer Section -->
+<footer class="w-full bg-gray-50 px-8 py-6 border-t border-gray-200">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
+        <!-- Logo -->
+        <div class="mb-4 md:mb-0">
+            <img src="/Users/ericgreen/Desktop/web app/EZ/src/images/logoez.png" alt="EZ Apply Logo" class="h-24">
+        </div>
+
+        <!-- Links and Copyright -->
+        <div class="flex flex-col md:flex-row items-center gap-4 text-gray-600 text-sm">
+            <a href="#" class="hover:text-blue-500">Privacy Policy</a>
+            <span class="hidden md:inline text-gray-400">|</span>
+            <a href="#" class="hover:text-blue-500">Terms & Conditions</a>
+            <span class="text-gray-500">© 2024 EZApply</span>
+        </div>
+    </div>
+</footer>
+
+
