@@ -5,19 +5,46 @@
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
-    "build": "tailwindcss -i ./src/styles.css -o ./dist/styles.css --watch"
+    "build": "react-scripts build",
+    "server": "node server/server.js",
+    "dev": "concurrently \"npm run start\" \"npm run server\"",
+    "build:css": "tailwindcss -i ./src/styles.css -o ./dist/styles.css --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.14"
+    "postcss": "^8.4.48",
+    "tailwindcss": "^3.4.14",
+    "nodemon": "^2.0.22",
+    "concurrently": "^8.2.0"
   },
   "dependencies": {
+    "firebase": "^10.6.0",
+    "@firebase/auth": "^1.4.0",
+    "@stripe/stripe-js": "^2.2.0",
     "airtable": "^0.12.2",
-    "firebase": "^11.0.1",
-    "react-router-dom": "^6.28.0"
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.18.0",
+    "react-scripts": "^5.0.1",
+    "stripe": "^14.2.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Add these styles to your existing CSS file */
+.stripe-pricing-table-container {
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .stripe-pricing-table-container {
+        padding: 10px;
+    }
+}
