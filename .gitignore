@@ -3,3 +3,5 @@ server/ezapp-91d8e-firebase-adminsdk-kj65k-a0c3702c0d.json
 src/.env
 node_modules/
 *.log
+server/.env 
+server/node_modules/
