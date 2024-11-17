@@ -1,4 +1,4 @@
-// src/pages/login.js
+// src/pages/Login.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,7 @@ const Login = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (currentUser) {
-            navigate('/dashboard');
+            navigate('/subscribe');
         }
     }, [currentUser, navigate]);
 
@@ -28,9 +28,9 @@ const Login = () => {
 
         try {
             await login(email, password);
-            navigate('/dashboard');
+            navigate('/subscribe');
         } catch (error) {
-            setError('Failed to login. Please check your credentials.');
+            setError('Failed to log in. Please check your credentials.');
             console.error(error);
         } finally {
             setLoading(false);
@@ -44,11 +44,10 @@ const Login = () => {
         
         try {
             const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            console.log('Logged in with Google:', result.user);
-            navigate('/dashboard');
+            await signInWithPopup(auth, provider);
+            navigate('/subscribe');
         } catch (error) {
-            setError('Failed to login with Google.');
+            setError('Failed to log in with Google.');
             console.error(error);
         } finally {
             setLoading(false);

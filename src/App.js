@@ -1,15 +1,18 @@
 // src/App.js
+// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import MainApp from './pages/MainApp';
-import Login from './pages/Login';
-import Signup from './pages/SignupPage';  // Updated to match SignupPage.js
-import Dashboard from './pages/Dashboard';
-import Subscribe from './pages/Subscribe';  // Matches case of Subscribe.js
-import SubscriptionGuard from './components/SubscriptionGuard';
-import ProtectedRoute from './components/ProtectedRoute';
-import SubscriptionFlow from './components/SubFlow';
-import { AuthProvider } from './context/AuthContext';
+
+// Try with explicit .js extensions
+import MainApp from './pages/MainApp.js';
+import Login from './pages/Login.js';
+import Signup from './pages/SignupPage.js';
+import Dashboard from './pages/Dashboard.js';
+import Subscribe from './pages/Subscribe.js';
+import SubscriptionGuard from './components/SubscriptionGuard.js';
+import ProtectedRoute from './components/ProtectedRoute.js';
+import SubscriptionFlow from './components/SubFlow.js';
+import { AuthProvider } from './context/AuthContext.js';
 
 function App() {
   return (
