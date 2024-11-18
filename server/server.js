@@ -78,7 +78,7 @@ app.post('/create-checkout-session', async (req, res) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.CLIENT_URL}/dashboard?success=true`,
+            success_url: `${process.env.CLIENT_URL}/main-app?success=true`,
             cancel_url: `${process.env.CLIENT_URL}/subscribe?canceled=true`,
             client_reference_id: userId,
             customer_email: userEmail,

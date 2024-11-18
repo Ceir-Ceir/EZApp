@@ -1,25 +1,25 @@
-// src/App.js
-// src/App.js
+// src/app.js
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Try with explicit .js extensions
-import MainApp from './pages/MainApp.js';
-import Login from './pages/Login.js';
-import Signup from './pages/SignupPage.js';
-import Dashboard from './pages/Dashboard.js';
-import Subscribe from './pages/Subscribe.js';
-import SubscriptionGuard from './components/SubscriptionGuard.js';
-import ProtectedRoute from './components/ProtectedRoute.js';
-import SubscriptionFlow from './components/SubFlow.js';
-import { AuthProvider } from './context/AuthContext.js';
+import LandingPage from './pages/LandingPage';
+import Login from './pages/Login';
+import Signup from './pages/SignupPage';
+import MainAppScreen from './pages/MainApp'; // Correct relative path
+import Subscribe from './pages/Subscribe';
+import SubscriptionGuard from './components/SubscriptionGuard';
+import ProtectedRoute from './components/ProtectedRoute';
+import SubscriptionFlow from './components/SubFlow';
+import { AuthProvider } from './context/AuthContext';
+
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<MainApp />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           
@@ -40,13 +40,13 @@ function App() {
             }
           />
           <Route
-            path="/dashboard"
+            path="/main-app"
             element={
-              <ProtectedRoute>
-                <SubscriptionGuard>
-                  <Dashboard />
-                </SubscriptionGuard>
-              </ProtectedRoute>
+              //<ProtectedRoute>
+                //<SubscriptionGuard>
+                  <MainAppScreen/>
+                //</SubscriptionGuard>
+            //</ProtectedRoute>
             }
           />
         </Routes>

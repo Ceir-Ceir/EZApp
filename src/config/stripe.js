@@ -1,6 +1,6 @@
 // src/config/stripe.js
 export const STRIPE_PRICES = {
-    BASIC: 'prod_RCDksq8VlhbRf5'
+    BASIC: 'prod_RCDksq8VlhbRf5',
     PRO: "prod_RCDmHaepSfuAsQ",
     ENTERPRISE: "prod_RCDntr8o33k5Y4"
 };

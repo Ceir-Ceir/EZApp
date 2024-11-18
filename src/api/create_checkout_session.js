@@ -16,7 +16,7 @@ exports.createCheckoutSession = async (req, res) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.DOMAIN}/dashboard?success=true`,
+            success_url: `${process.env.DOMAIN}/main-app?success=true`,
             cancel_url: `${process.env.DOMAIN}/subscribe?canceled=true`,
             client_reference_id: userId,
             customer_email: userEmail,
