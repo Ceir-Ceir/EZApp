@@ -44,7 +44,7 @@ function App() {
             element={
               //<ProtectedRoute>
                 //<SubscriptionGuard>
-                  <MainAppScreen/>
+                  <MainApp/>
                 //</SubscriptionGuard>
             //</ProtectedRoute>
             }
