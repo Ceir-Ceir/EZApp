@@ -3,7 +3,7 @@ import MainAppForm from './MainAppForms';// Forms component
 import DashboardView from './DashboardView'; // Dashboard component
 import JobSearch from './JobSearch'; // Job search component (to be built)
 
-const MainAppScreen = () => {
+const MainApp = () => {
   const [activeSection, setActiveSection] = useState('MainApp'); // Tracks active section
 
   const renderContent = () => {
@@ -86,4 +86,4 @@ const NavItem = ({ icon, label, isActive, onClick }) => (
   </div>
 );
 
-export default MainAppScreen;
+export default MainApp;
