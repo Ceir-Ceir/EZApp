@@ -24,11 +24,11 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+//export const db = getFirestore(app);
 
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth, db } from './firebase';
+//import { auth, db } from './firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();

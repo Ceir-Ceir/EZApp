@@ -1,10 +1,10 @@
-import { auth } from '../config/firebase';
-import { 
+//import { auth } from '../config/firebase';
+//import { 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,
     GoogleAuthProvider,
     signInWithPopup 
-} from 'firebase/auth';
+//} from 'firebase/auth';
 
 export const signUpWithEmail = async (email, password) => {
     try {
