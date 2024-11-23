@@ -1,6 +1,6 @@
 // src/api/stripe-webhook.js
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { db } = require('../services/firebase');
+const { db } = require('../../src/services/firebase');
 const { doc, updateDoc } = require('firebase/firestore');
 
 exports.handleStripeWebhook = async (req, res) => {

@@ -11,11 +11,15 @@ app.use(cors({
     origin: 'http://localhost:3000'
 }));
 
+
 // Serve static files from the root public directory
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// Use JSON parsing for all routes
+app.use(express.json());
+
 // Webhook endpoint must use raw body
-app.post('/webhook', express.raw({type: 'application/json'}), async (request, response) => {
+app.post('/webhook', express.raw({ type: 'application/json' }), async (request, response) => {
     const sig = request.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -40,7 +44,6 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
                 }
 
                 // Update user's subscription status in Firebase
-                // You'll need to implement this function to update Firebase
                 await updateUserSubscriptionStatus(userId, status);
                 break;
 
@@ -48,7 +51,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
                 console.log(`Unhandled event type ${event.type}`);
         }
 
-        response.json({received: true});
+        response.json({ received: true });
     } catch (err) {
         console.log(`❌ Webhook Error: ${err.message}`);
         response.status(400).send(`Webhook Error: ${err.message}`);
@@ -56,14 +59,13 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
     }
 });
 
-// Use JSON parsing for all other routes
-app.use(express.json());
-
 // Checkout session endpoint
 app.post('/create-checkout-session', async (req, res) => {
+    console.log("inside api");
     const { priceId, userId, userEmail } = req.body;
-
     try {
+        console.log("inside api");
+        
         // Validate required fields
         if (!priceId || !userId || !userEmail) {
             throw new Error('Missing required fields');
@@ -78,8 +80,8 @@ app.post('/create-checkout-session', async (req, res) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.CLIENT_URL}/main-app?success=true`,
-            cancel_url: `${process.env.CLIENT_URL}/subscribe?canceled=true`,
+            success_url: `${process.env.CLIENT_URL}/subscription-status?status=success`,
+            cancel_url: `${process.env.CLIENT_URL}/subscription-status?status=cancelled`,
             client_reference_id: userId,
             customer_email: userEmail,
             allow_promotion_codes: true,
@@ -108,7 +110,7 @@ async function updateUserSubscriptionStatus(userId, status) {
         if (!admin.apps.length) {
             admin.initializeApp({
                 credential: admin.credential.applicationDefault(),
-                // Add your Firebase config here
+                // Add your Firebase config here if needed
             });
         }
 

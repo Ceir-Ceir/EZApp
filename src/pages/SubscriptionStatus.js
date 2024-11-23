@@ -1,3 +1,4 @@
+// src/pages/subscrptionStatus.js
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { checkSubscriptionStatus, isSubscriptionActive } from '../services/stripe';

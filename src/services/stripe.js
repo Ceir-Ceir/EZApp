@@ -1,4 +1,4 @@
-// src/services/stripeService.js
+// src/services/stripe.js
 import { loadStripe } from '@stripe/stripe-js';
 import { db } from './firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -9,6 +9,11 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 export async function createSubscription(userId, priceId) {
     try {
         const stripe = await stripePromise;
+
+        // Validate Stripe object
+        if (!stripe) {
+            throw new Error('Stripe.js failed to initialize.');
+        }
         
         // Get user data for the checkout session
         const userRef = doc(db, 'users', userId);
@@ -19,51 +24,16 @@ export async function createSubscription(userId, priceId) {
         }
 
         const userData = userSnap.data();
-        // Create a new checkout session
-        // const response = await fetch('/api/create-checkout-session', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({
-        //         userId,
-        //         priceId,
-        //         email: userData.email,
-        //     }),
-        // });
-
-        // if (!response.ok) {
-        //     throw new Error('Failed to create checkout session');
-        // }
-
-        // const session = await response.json();
-        
-        // // If sessionId is a URL (new Stripe behavior), redirect directly
-        // if (session.sessionId.startsWith('http')) {
-        //     window.location.href = session.sessionId;
-        //     return;
-        // }
-
-        // // Otherwise, use redirectToCheckout
-        // const result = await stripe.redirectToCheckout({
-        //     sessionId: session.sessionId
-        // });
-
-        // if (result?.error) {
-        //     throw new Error(result.error.message);
-        // }
-
          // Create a Checkout Session directly using Stripe.js
-         const session = await stripe.redirectToCheckout({
+         const { error } = await stripe.redirectToCheckout({
             mode: 'subscription',
             lineItems: [{ price: priceId, quantity: 1 }],
             customerEmail: userData.email,
-            successUrl: `${window.location.origin}/subscribe-status?status=success`,
-            cancelUrl: `${window.location.origin}/subscribe-status?status=cancelled`,
+            successUrl: `${window.location.origin}/subscription-status?status=success`,
+            cancelUrl: `${window.location.origin}/subscription-status?status=cancelled`,
         });
-
-        if (session.error) {
-            throw new Error(session.error.message);
+        if (error) {
+            throw new Error(error.message);
         }
 
         
@@ -75,6 +45,9 @@ export async function createSubscription(userId, priceId) {
 
 // Update the subscription status in Firestore
 export async function handleSubscriptionStatusChange(userId, status) {
+    if (!userId || typeof status !== 'string') {
+        throw new Error('Invalid parameters for updating subscription status.');
+    }
     try {
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {

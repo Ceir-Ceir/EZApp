@@ -1,10 +1,10 @@
 // src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged 
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
@@ -13,7 +13,7 @@ import { createSubscription } from '../services/stripe';
 export const AuthContext = createContext();
 
 export function useAuth() {
-  return useContext(AuthContext);
+    return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
@@ -24,24 +24,28 @@ export function AuthProvider({ children }) {
         try {
             // Step 1: Create user with email and password
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    
+
             const userId = userCredential.user.uid;
-            console.log("userId: ", userId);
-    
+            console.log("User created with UID: ", userId);
+
             // Step 2: Save user information in Firestore with 'inactive' subscription status
             await setDoc(doc(db, 'users', userId), {
                 email,
                 createdAt: new Date().toISOString(),
                 subscriptionStatus: 'inactive'
             });
-    
+
             // Step 3: Create a Stripe subscription for the user
             await createSubscription(userId, priceId);
-    
+
             // Redirect to a waiting page while payment is being processed
             return userCredential.user;
         } catch (error) {
-            throw error;
+            const errorMessage = error.code === 'auth/email-already-in-use'
+                ? 'This email is already in use. Please log in or reset your password.'
+                : 'Signup failed. Please try again.';
+            console.error(error.message);
+            throw new Error(errorMessage);
         }
     }
 
@@ -67,23 +71,24 @@ export function AuthProvider({ children }) {
     }
 
     useEffect(() => {
-        try {
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    const subscriptionStatus = await getUserSubscriptionStatus(user.uid);
-                    setCurrentUser({ ...user, subscriptionStatus });
-                } else {
-                    setCurrentUser(null);
-                }
-                setLoading(false);
-            });
-
-            return () => unsubscribe();
-        } catch (error) {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          try {
+            if (user) {
+              const subscriptionStatus = await getUserSubscriptionStatus(user.uid);
+              setCurrentUser({ ...user, subscriptionStatus });
+            } else {
+              setCurrentUser(null);
+            }
+          } catch (error) {
             console.error('Auth state change error:', error);
+          } finally {
             setLoading(false);
-        }
-    }, []);
+          }
+        });
+      
+        return () => unsubscribe();
+      }, []);
+      
 
     const value = {
         currentUser,

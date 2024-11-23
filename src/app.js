@@ -47,7 +47,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardView />} />
           <Route path="/job-search" element={<JobSearch />} />
           <Route path="/main-app-forms" element={<MainAppForm />} />
-          <Route path="/subscribe-status" element={<SubscriptionStatus />} />
+          <Route path="/subscription-status" element={<SubscriptionStatus />} />
         </Routes>
       </Router>
     </AuthProvider>
