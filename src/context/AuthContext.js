@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import { createSubscription } from '../services/stripe';
 
 export const AuthContext = createContext();
 
@@ -19,14 +20,25 @@ export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    async function signup(email, password) {
+    async function signup(email, password, priceId) {
         try {
+            // Step 1: Create user with email and password
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await setDoc(doc(db, 'users', userCredential.user.uid), {
+    
+            const userId = userCredential.user.uid;
+            console.log("userId: ", userId);
+    
+            // Step 2: Save user information in Firestore with 'inactive' subscription status
+            await setDoc(doc(db, 'users', userId), {
                 email,
                 createdAt: new Date().toISOString(),
                 subscriptionStatus: 'inactive'
             });
+    
+            // Step 3: Create a Stripe subscription for the user
+            await createSubscription(userId, priceId);
+    
+            // Redirect to a waiting page while payment is being processed
             return userCredential.user;
         } catch (error) {
             throw error;

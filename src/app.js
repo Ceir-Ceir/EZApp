@@ -10,6 +10,7 @@ import MainApp from "./pages/MainApp";
 import DashboardView from "./pages/DashboardView";
 import JobSearch from "./pages/JobSearch";
 import MainAppForm from "./pages/MainAppForms";
+import SubscriptionStatus from "./pages/SubscriptionStatus";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardView />} />
           <Route path="/job-search" element={<JobSearch />} />
           <Route path="/main-app-forms" element={<MainAppForm />} />
+          <Route path="/subscribe-status" element={<SubscriptionStatus />} />
         </Routes>
       </Router>
     </AuthProvider>

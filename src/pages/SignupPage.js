@@ -49,19 +49,20 @@ const Signup = () => {
     const handleGoogleSignup = async () => {
         setLoading(true);
         setError('');
-        
+    
         try {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
-            console.log('Signed up with Google:', result.user);
+            console.log('Google Sign-In Success:', result.user); // Log user details
             navigate('/subscribe');
         } catch (error) {
-            setError('Failed to sign up with Google.');
-            console.error(error);
+            console.error('Google Sign-In Error:', error); // Log error details
+            setError(`Failed to sign up with Google: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
+    
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">

@@ -12,22 +12,23 @@ const Subscribe = () => {
         if (!currentUser) {
             navigate('/login');
         }
-
+    
         // Load Stripe Pricing Table script
         const script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/pricing-table.js';
         script.async = true;
         document.body.appendChild(script);
-
+    
         return () => {
             // Cleanup script when component unmounts
             const existingScript = document.querySelector('script[src="https://js.stripe.com/v3/pricing-table.js"]');
-            if (existingScript) {
-                document.body.removeChild(existingScript);
+            console.log('Script exists:', existingScript);
+            if (existingScript && existingScript.parentNode) {
+                existingScript.parentNode.removeChild(existingScript);
             }
         };
     }, [currentUser, navigate]);
-
+    
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
             <div className="max-w-7xl mx-auto">
