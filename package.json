@@ -16,24 +16,27 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.31",
-    "tailwindcss": "^3.4.1",
+    "concurrently": "^8.2.2",
     "nodemon": "^3.0.2",
-    "concurrently": "^8.2.2"
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.4.1"
   },
   "dependencies": {
-    "firebase": "^10.7.1",
     "@firebase/auth": "^1.5.1",
+    "@firebase/firestore": "^4.7.5",
     "@stripe/stripe-js": "^2.2.2",
     "airtable": "^0.12.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "firebase": "^10.7.1",
     "react": "^18.2.0",
+    "react-csv": "^2.2.2",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
     "react-scripts": "5.0.1",
-    "stripe": "^14.10.0"
+    "stripe": "^14.10.0",
+    "xlsx": "^0.18.5"
   },
   "browserslist": {
     "production": [
@@ -41,26 +44,24 @@
       "not dead",
       "not op_mini all"
     ],
-      "development": [
-        "last 1 chrome version",
-        "last 1 firefox version",
-        "last 1 safari version"
-      ]
-    },
-  
-    "resolutions": {
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "resolutions": {
     "nth-check": "^2.0.1",
     "postcss": "^8.4.31",
     "@svgr/webpack": "^8.0.1",
     "svgo": "^3.0.2",
     "css-select": "^5.1.0"
   },
-  
-    "overrides": {
-      "nth-check": "^2.0.1",
-      "postcss": "^8.4.31",
-      "@svgr/webpack": "^8.0.1",
-      "svgo": "^3.0.2",
-      "css-select": "^5.1.0"
+  "overrides": {
+    "nth-check": "^2.0.1",
+    "postcss": "^8.4.31",
+    "@svgr/webpack": "^8.0.1",
+    "svgo": "^3.0.2",
+    "css-select": "^5.1.0"
   }
-} 
+}

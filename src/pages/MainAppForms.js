@@ -1,22 +1,58 @@
+// src/pages/MainAppForms.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // For redirection
+import { db } from '../services/firebase'; // Firebase configuration
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 
-// MainAppForm Component
+// Step Navigation
+const Step = ({ number, label, isActive }) => (
+  <div
+    className={`cursor-pointer py-2 ${isActive ? 'text-blue-600' : 'text-gray-600'}`}
+  >
+    <span className="font-medium">{number}. </span>
+    {label}
+  </div>
+);
+
 const MainAppForm = () => {
-  const [activeStep, setActiveStep] = useState(1); // Step state to control form progression
+  const [activeStep, setActiveStep] = useState(1); // Step navigation
+  const [userData, setUserData] = useState({}); // Store form data across steps
+  const navigate = useNavigate(); // For redirection to dashboard
+
+  const handleNext = (stepData) => {
+    setUserData((prev) => ({ ...prev, ...stepData })); // Merge step data
+    if (activeStep === 4) {
+      saveToFirestore(); // Save all data to Firestore
+    } else {
+      setActiveStep(activeStep + 1); // Move to next step
+    }
+  };
+
+  const saveToFirestore = async () => {
+    try {
+      const docRef = doc(db, 'Users', userData.email); // Document ID is email
+      await setDoc(docRef, userData);
+      alert('Data saved successfully!');
+      navigate('/dashboard'); // Redirect to dashboard
+    } catch (error) {
+      console.error('Error saving data:', error);
+      alert('Error saving data. Please try again.');
+    }
+  };
 
   const renderForm = () => {
-    // Dynamically render forms based on active step
     switch (activeStep) {
       case 1:
-        return <PersonalInformationForm onNext={() => setActiveStep(2)} />;
+        return <PersonalInformationForm onNext={(data) => handleNext(data)} />;
       case 2:
-        return <DemographicsForm onNext={() => setActiveStep(3)} />;
+        return <DemographicsForm onNext={(data) => handleNext(data)} />;
       case 3:
-        return <EducationForm onNext={() => setActiveStep(4)} />;
+        return <EducationForm onNext={(data) => handleNext(data)} />;
       case 4:
-        return <WorkExperienceForm onNext={() => alert('All steps completed!')} />;
+        return <WorkExperienceForm onNext={(data) => handleNext(data)} />;
       default:
-        return <PersonalInformationForm onNext={() => setActiveStep(2)} />;
+        return null;
     }
   };
 
@@ -25,510 +61,464 @@ const MainAppForm = () => {
       {/* Left Panel: Steps Navigation */}
       <div className="w-1/3 bg-white rounded-lg p-6 shadow">
         <h2 className="text-xl font-semibold mb-6">Registration</h2>
-        <Step number="1" label="Personal Information" isActive={activeStep === 1} onClick={() => setActiveStep(1)} />
-        <Step number="2" label="Demographics (Optional)" isActive={activeStep === 2} onClick={() => setActiveStep(2)} />
-        <Step number="3" label="Education" isActive={activeStep === 3} onClick={() => setActiveStep(3)} />
-        <Step number="4" label="Work Experience" isActive={activeStep === 4} onClick={() => setActiveStep(4)} />
+        <Step number="1" label="Personal Information" isActive={activeStep === 1} />
+        <Step number="2" label="Demographics" isActive={activeStep === 2} />
+        <Step number="3" label="Education" isActive={activeStep === 3} />
+        <Step number="4" label="Work Experience" isActive={activeStep === 4} />
       </div>
 
       {/* Right Panel: Form */}
-      <div className="flex-1 bg-white rounded-lg p-6 shadow">
-        {renderForm()} {/* Dynamically render the form based on the current step */}
-      </div>
+      <div className="flex-1 bg-white rounded-lg p-6 shadow">{renderForm()}</div>
     </div>
   );
 };
 
 /* Personal Information Form */
-const PersonalInformationForm = ({ onNext }) => (
-    <form className="flex flex-col h-full">
-    <div className="space-y-6">
-        <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
-        <Input label="Full Name" placeholder="Enter your full name" />
-        <Input label="Email Address" placeholder="Enter your email address" />
-        <Input label="Phone Number" placeholder="Enter your phone number" />
-        <Input label="LinkedIn Profile URL" placeholder="Paste LinkedIn URL" />
-    </div>
-    <button
-        type="button"
-        onClick={onNext}
-        className="mt-auto w-full bg-[#004aad] text-white py-3 rounded-lg font-semibold"
-    >
-        Next
-    </button>
-    </form>
-);
+const PersonalInformationForm = ({ onNext }) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    linkedIn: '',
+  });
 
-const DemographicsForm = ({ onNext }) => (
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = () => {
+    if (!formData.fullName || !formData.email) {
+      alert("Please fill in the required fields.");
+      return;
+    }
+    onNext(formData);
+  };
+
+  return (
     <form className="flex flex-col h-full">
-      {/* Form Fields */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold mb-4">Demographics</h2>
-  
-        {/* Left Section */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-6">
-            {/* Are You Over 18 */}
-            <Question
-              label="Are you over 18 years of age?"
-              options={[
-                { label: "Yes", value: "yes" },
-                { label: "No", value: "no" },
-              ]}
-            />
-  
-            {/* Authorization to Work */}
-            <Question
-              label="Do you have authorization to work in the United States?"
-              options={[
-                { label: "Yes", value: "yes" },
-                { label: "No", value: "no" },
-              ]}
-            />
-  
-            {/* Sponsorship Requirement */}
-            <Question
-              label="Do you require sponsorship to work in the United States?"
-              options={[
-                { label: "Yes", value: "yes" },
-                { label: "No", value: "no" },
-              ]}
-            />
-          </div>
-  
-          {/* Right Section */}
-          <div className="space-y-6">
-            {/* Gender Question */}
-            <div>
-              <p className="text-sm font-medium mb-2">Gender</p>
-              <select
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-              >
-                <option value="" disabled selected>
-                  Select your gender
-                </option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="non_binary">Non-Binary</option>
-                <option value="genderqueer">Genderqueer</option>
-                <option value="prefer_not_to_say">Prefer Not to Say</option>
-              </select>
-            </div>
-  
-            {/* Pronouns Question */}
-            <div>
-              <p className="text-sm font-medium mb-2">Pronouns</p>
-              <select
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-              >
-                <option value="" disabled selected>
-                  Select your pronouns
-                </option>
-                <option value="he_him">He/Him</option>
-                <option value="she_her">She/Her</option>
-                <option value="they_them">They/Them</option>
-                <option value="xe_xem">Xe/Xem</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
+        <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Full Name</label>
+          <input
+            className="border border-gray-300 rounded-lg p-2"
+            placeholder="Enter your full name"
+            value={formData.fullName}
+            onChange={(e) => handleChange('fullName', e.target.value)}
+          />
         </div>
-  
-        {/* Disability Status */}
-        <Question
-          label="Do you have a disability?"
-          options={[
-            { label: "Yes", value: "yes" },
-            { label: "No", value: "no" },
-            { label: "Prefer not to say", value: "prefer_not_to_say" },
-          ]}
-        />
-  
-        {/* Veteran Status */}
-        <Question
-          label="Are you a veteran?"
-          options={[
-            { label: "Yes", value: "yes" },
-            { label: "No", value: "no" },
-            { label: "Prefer not to say", value: "prefer_not_to_say" },
-          ]}
-        />
-  
-        {/* Race Dropdown */}
-        <div>
-          <label className="block text-sm font-medium mb-2">Select your race</label>
-          <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-          >
-            <option value="" disabled selected>
-              Choose an option
-            </option>
-            <option value="white">White</option>
-            <option value="black">Black or African American</option>
-            <option value="asian">Asian</option>
-            <option value="native_american">Native American or Alaska Native</option>
-            <option value="native_hawaiian">Native Hawaiian or Other Pacific Islander</option>
-            <option value="two_or_more">Two or More Races</option>
-            <option value="other">Other</option>
-            <option value="prefer_not_to_say">Prefer Not to Say</option>
-          </select>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Email Address</label>
+          <input
+            className="border border-gray-300 rounded-lg p-2"
+            placeholder="Enter your email address"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+          />
         </div>
-  
-        {/* Hispanic/Latino Question */}
-        <div>
-          <p className="text-sm font-medium mb-2">Are you Hispanic or Latino?</p>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              className="text-[#004aad] focus:ring-[#004aad]"
-            />
-            <span>Yes</span>
-          </label>
-          <label className="flex items-center space-x-2 mt-2">
-            <input
-              type="checkbox"
-              className="text-[#004aad] focus:ring-[#004aad]"
-            />
-            <span>No</span>
-          </label>
-        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Phone Number</label>
+          <input
+            label="Phone Number"
+            className="border border-gray-300 rounded-lg p-2"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+          /></div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">LinkedIn Profile URL</label>
+          <input
+            className="border border-gray-300 rounded-lg p-2"
+            placeholder="Paste LinkedIn URL"
+            value={formData.linkedIn}
+            onChange={(e) => handleChange('linkedIn', e.target.value)}
+          /></div>
       </div>
-  
-      {/* Next Button */}
       <button
         type="button"
-        onClick={onNext}
+        onClick={handleSubmit}
         className="mt-auto w-full bg-[#004aad] text-white py-3 rounded-lg font-semibold"
       >
         Next
       </button>
     </form>
   );
-  
- 
-    // education form
+};
+
+/* Demographics Form */
+const DemographicsForm = ({ onNext }) => {
+  const [formData, setFormData] = useState({
+    over18: '',
+    workAuth: '',
+    sponsorship: '',
+    gender: '',
+    pronouns: '',
+    disability: '',
+    veteran: '',
+    race: '',
+    hispanic: '',
+  });
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = () => {
+    onNext(formData);
+  };
+
+  return (
+    <form className="flex flex-col h-full">
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold mb-4">Demographics</h2>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Are you over 18?</label>
+        <input
+          placeholder="Yes/No"
+          value={formData.over18}
+          onChange={(e) => handleChange('over18', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Work Authorization</label>
+        <input
+          className="border border-gray-300 rounded-lg p-2"
+          placeholder="Enter work authorization details"
+          value={formData.workAuth}
+          onChange={(e) => handleChange('workAuth', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Sponsorship Needed?</label>
+        <input
+          placeholder="Yes/No"
+          value={formData.sponsorship}
+          onChange={(e) => handleChange('sponsorship', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Gender</label>
+        <input
+          label="Gender"
+          className="border border-gray-300 rounded-lg p-2"
+          placeholder="Enter your gender"
+          value={formData.gender}
+          onChange={(e) => handleChange('gender', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Preferred Pronouns</label>
+        <input
+          className="border border-gray-300 rounded-lg p-2"
+          placeholder="Enter pronouns"
+          value={formData.pronouns}
+          onChange={(e) => handleChange('pronouns', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Disability Status</label>
+        <input
+          className="border border-gray-300 rounded-lg p-2"
+          placeholder="Enter disability status"
+          value={formData.disability}
+          onChange={(e) => handleChange('disability', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Veteran Status</label>
+        <input
+          label="Veteran Status"
+          className="border border-gray-300 rounded-lg p-2"
+          placeholder="Enter veteran status"
+          value={formData.veteran}
+          onChange={(e) => handleChange('veteran', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Race/Ethnicity</label>
+        <input
+          className="border border-gray-300 rounded-lg p-2"
+          placeholder="Enter race/ethnicity"
+          value={formData.race}
+          onChange={(e) => handleChange('race', e.target.value)}
+        />
+        </div>
+        <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Are you Hispanic or Latino?</label>
+        <input
+          placeholder="Yes/No"
+          value={formData.hispanic}
+          onChange={(e) => handleChange('hispanic', e.target.value)}
+        />
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={handleSubmit}
+        className="mt-auto w-full bg-[#004aad] text-white py-3 rounded-lg font-semibold"
+      >
+        Next
+      </button>
+    </form>
+  );
+};
+
+/* Education Form */
 const EducationForm = ({ onNext }) => {
-const [educationEntries, setEducationEntries] = useState([
-    { school: '', degree: '', year: '', field: '' },
-]); // Start with one entry
+  const [educationEntries, setEducationEntries] = useState([
+    { school: '', degree: '', startDate: '', endDate: '', description: '' },
+  ]);
 
-const handleAddEntry = () => {
-    setEducationEntries([...educationEntries, { school: '', degree: '', year: '', field: '' }]);
-};
+  const handleAddEntry = () => {
+    setEducationEntries([
+      ...educationEntries,
+      { school: '', degree: '', startDate: '', endDate: '', description: '' },
+    ]);
+  };
 
-const handleRemoveEntry = (index) => {
+  const handleRemoveEntry = (index) => {
     setEducationEntries(educationEntries.filter((_, i) => i !== index));
-};
+  };
 
-const handleChange = (index, field, value) => {
+  const handleChange = (index, field, value) => {
     const updatedEntries = [...educationEntries];
     updatedEntries[index][field] = value;
     setEducationEntries(updatedEntries);
-};
+  };
 
-return (
+  const handleSubmit = () => {
+    onNext({ education: educationEntries });
+  };
+
+  return (
     <form className="flex flex-col h-full">
-    <div className="flex-1 space-y-6">
+      <div className="space-y-6">
         <h2 className="text-xl font-semibold mb-4">Education</h2>
         {educationEntries.map((entry, index) => (
-        <div key={index} className="space-y-4 border-b border-gray-300 pb-4">
-            {/* School Name */}
-            <Input
-            label="School Name"
-            placeholder="Enter your school name"
-            value={entry.school}
-            onChange={(e) => handleChange(index, 'school', e.target.value)}
-            />
-
-        {/* Degree Earned */}
-        <div>
-        <label className="block text-sm font-medium mb-2">Degree Earned</label>
-        <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-            value={entry.degree}
-            onChange={(e) => handleChange(index, 'degree', e.target.value)}
-        >
-            <option value="" disabled selected>
-            Select degree
-            </option>
-            <option value="high_school">High School Diploma</option>
-            <option value="ged">GED</option>
-            <option value="associates">Associate's Degree</option>
-            <option value="bachelors">Bachelor's Degree</option>
-            <option value="masters">Master's Degree</option>
-            <option value="doctoral">Doctoral Degree</option>
-            <option value="post_doc">Post-Doctoral Degree</option>
-        </select>
-        </div>
-
-        {/* Graduation Year */}
-        <div>
-        <label className="block text-sm font-medium mb-2">Graduation Year</label>
-        <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-            value={entry.year}
-            onChange={(e) => handleChange(index, 'year', e.target.value)}
-        >
-            <option value="" disabled selected>
-            Select year
-            </option>
-            {Array.from({ length: 100 }, (_, i) => {
-            const year = new Date().getFullYear() - i;
-            return (
-                <option key={year} value={year}>
-                {year}
-                </option>
-            );
-            })}
-        </select>
-        </div>
-
-            {/* Field of Study */}
-            <Input
-            label="Field of Study"
-            placeholder="Enter your field of study"
-            value={entry.field}
-            onChange={(e) => handleChange(index, 'field', e.target.value)}
-            />
-
-            {/* Remove Entry Button */}
+          <div key={index} className="space-y-4 border-b border-gray-300 pb-4">
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">School/University Name</label>
+              <input
+                type="text"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.school}
+                onChange={(e) => handleChange(index, 'school', e.target.value)}
+                placeholder="Enter school/university name"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Degree</label>
+              <input
+                type="text"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.degree}
+                onChange={(e) => handleChange(index, 'degree', e.target.value)}
+                placeholder="Enter degree"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Start Date</label>
+              <input
+                type="date"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.startDate}
+                onChange={(e) => handleChange(index, 'startDate', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">End Date</label>
+              <input
+                type="date"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.endDate}
+                onChange={(e) => handleChange(index, 'endDate', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Description</label>
+              <textarea
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.description}
+                onChange={(e) => handleChange(index, 'description', e.target.value)}
+                placeholder="Describe your education, major, etc."
+                rows="3"
+              />
+            </div>
             {educationEntries.length > 1 && (
-            <button
+              <button
                 type="button"
                 onClick={() => handleRemoveEntry(index)}
-                className="text-sm text-red-500 hover:underline"
-            >
+                className="text-sm text-red-500 hover:underline mt-2"
+              >
                 Remove Entry
-            </button>
+              </button>
             )}
-        </div>
+          </div>
         ))}
-
-        {/* Add Entry Button */}
         <button
-        type="button"
-        onClick={handleAddEntry}
-        className="text-sm text-[#004aad] hover:underline"
+          type="button"
+          onClick={handleAddEntry}
+          className="text-sm text-[#004aad] hover:underline"
         >
-        + Add Another Entry
+          + Add Another Entry
         </button>
-    </div>
-
-    {/* Next Button */}
-    <button
+      </div>
+      <button
         type="button"
-        onClick={onNext}
+        onClick={handleSubmit}
         className="mt-auto w-full bg-[#004aad] text-white py-3 rounded-lg font-semibold"
-    >
-        Next
-    </button>
+      >
+        Submit
+      </button>
     </form>
-);
+  );
 };
 
 
-    // work experince
-    const WorkExperienceForm = ({ onNext }) => {
-        const [workEntries, setWorkEntries] = useState([
-          { company: '', title: '', startMonth: '', startYear: '', endMonth: '', endYear: '', responsibilities: '', links: '' },
-        ]); // Start with one entry
-      
-        const handleAddEntry = () => {
-          setWorkEntries([
-            ...workEntries,
-            { company: '', title: '', startMonth: '', startYear: '', endMonth: '', endYear: '', responsibilities: '', links: '' },
-          ]);
-        };
-      
-        const handleRemoveEntry = (index) => {
-          setWorkEntries(workEntries.filter((_, i) => i !== index));
-        };
-      
-        const handleChange = (index, field, value) => {
-          const updatedEntries = [...workEntries];
-          updatedEntries[index][field] = value;
-          setWorkEntries(updatedEntries);
-        };
-      
-        return (
-          <form className="flex flex-col h-full">
-            <div className="flex-1 space-y-6">
-              <h2 className="text-xl font-semibold mb-4">Work Experience</h2>
-              {workEntries.map((entry, index) => (
-                <div key={index} className="space-y-4 border-b border-gray-300 pb-4">
-                  {/* Company Name */}
-                  <Input
-                    label="Company Name"
-                    placeholder="Enter the company name"
-                    value={entry.company}
-                    onChange={(e) => handleChange(index, 'company', e.target.value)}
-                  />
-      
-                  {/* Job Title */}
-                  <Input
-                    label="Job Title"
-                    placeholder="Enter your job title"
-                    value={entry.title}
-                    onChange={(e) => handleChange(index, 'title', e.target.value)}
-                  />
-      
-                  {/* Start Date */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Start Month</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-                        value={entry.startMonth}
-                        onChange={(e) => handleChange(index, 'startMonth', e.target.value)}
-                      >
-                        <option value="" disabled selected>
-                          Select month
-                        </option>
-                        {Array.from({ length: 12 }, (_, i) => (
-                          <option key={i} value={i + 1}>
-                            {new Date(0, i).toLocaleString('default', { month: 'long' })}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Start Year</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-                        value={entry.startYear}
-                        onChange={(e) => handleChange(index, 'startYear', e.target.value)}
-                      >
-                        <option value="" disabled selected>
-                          Select year
-                        </option>
-                        {Array.from({ length: 100 }, (_, i) => {
-                          const year = new Date().getFullYear() - i;
-                          return (
-                            <option key={year} value={year}>
-                              {year}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  </div>
-      
-                  {/* End Date */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">End Month</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-                        value={entry.endMonth}
-                        onChange={(e) => handleChange(index, 'endMonth', e.target.value)}
-                      >
-                        <option value="" disabled selected>
-                          Select month
-                        </option>
-                        {Array.from({ length: 12 }, (_, i) => (
-                          <option key={i} value={i + 1}>
-                            {new Date(0, i).toLocaleString('default', { month: 'long' })}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">End Year</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-                        value={entry.endYear}
-                        onChange={(e) => handleChange(index, 'endYear', e.target.value)}
-                      >
-                        <option value="" disabled selected>
-                          Select year
-                        </option>
-                        {Array.from({ length: 100 }, (_, i) => {
-                          const year = new Date().getFullYear() - i;
-                          return (
-                            <option key={year} value={year}>
-                              {year}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  </div>
-      
-                  {/* Key Responsibilities */}
-                  <Input
-                    label="Key Responsibilities"
-                    placeholder="List your key responsibilities"
-                    value={entry.responsibilities}
-                    onChange={(e) => handleChange(index, 'responsibilities', e.target.value)}
-                  />
-      
-                  {/* Links */}
-                  <Input
-                    label="Links (optional)"
-                    placeholder="Add any relevant links (e.g., portfolio, references)"
-                    value={entry.links}
-                    onChange={(e) => handleChange(index, 'links', e.target.value)}
-                  />
-      
-                  {/* Remove Entry Button */}
-                  {workEntries.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveEntry(index)}
-                      className="text-sm text-red-500 hover:underline"
-                    >
-                      Remove Entry
-                    </button>
-                  )}
-                </div>
-              ))}
-      
-              {/* Add Entry Button */}
+/* Work Experience Form */
+const WorkExperienceForm = ({ onNext }) => {
+  const [experienceEntries, setExperienceEntries] = useState([
+    { company: '', position: '', startDate: '', endDate: '', description: '' },
+  ]);
+
+  const handleAddEntry = () => {
+    setExperienceEntries([
+      ...experienceEntries,
+      { company: '', position: '', startDate: '', endDate: '', description: '' },
+    ]);
+  };
+
+  const handleRemoveEntry = (index) => {
+    setExperienceEntries(experienceEntries.filter((_, i) => i !== index));
+  };
+
+  const handleChange = (index, field, value) => {
+    const updatedEntries = [...experienceEntries];
+    updatedEntries[index][field] = value;
+    setExperienceEntries(updatedEntries);
+  };
+
+  const handleSubmit = () => {
+    onNext({ workExperience: experienceEntries });
+  };
+
+
+  return (
+    <form className="flex flex-col h-full">
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold mb-4">Work Experience</h2>
+        {experienceEntries.map((entry, index) => (
+          <div key={index} className="space-y-4 border-b border-gray-300 pb-4">
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Company Name</label>
+              <input
+                type="text"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.company}
+                onChange={(e) => handleChange(index, 'company', e.target.value)}
+                placeholder="Enter company name"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Position</label>
+              <input
+                type="text"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.position}
+                onChange={(e) => handleChange(index, 'position', e.target.value)}
+                placeholder="Enter position title"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Start Date</label>
+              <input
+                type="date"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.startDate}
+                onChange={(e) => handleChange(index, 'startDate', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">End Date</label>
+              <input
+                type="date"
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.endDate}
+                onChange={(e) => handleChange(index, 'endDate', e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium mb-1">Job Description</label>
+              <textarea
+                className="border border-gray-300 rounded-lg p-2"
+                value={entry.description}
+                onChange={(e) => handleChange(index, 'description', e.target.value)}
+                placeholder="Describe your responsibilities and achievements"
+                rows="3"
+              />
+            </div>
+            {experienceEntries.length > 1 && (
               <button
                 type="button"
-                onClick={handleAddEntry}
-                className="text-sm text-[#004aad] hover:underline"
+                onClick={() => handleRemoveEntry(index)}
+                className="text-sm text-red-500 hover:underline mt-2"
               >
-                + Add Another Entry
+                Remove Entry
               </button>
-            </div>
-      
-            {/* Next Button */}
-            <button
-              type="button"
-              onClick={onNext}
-              className="mt-auto w-full bg-[#004aad] text-white py-3 rounded-lg font-semibold"
-            >
-              Next
-            </button>
-          </form>
-        );
-      };
+            )}
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={handleAddEntry}
+          className="text-sm text-[#004aad] hover:underline"
+        >
+          + Add Another Entry
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={handleSubmit}
+        className="mt-auto w-full bg-[#004aad] text-white py-3 rounded-lg font-semibold"
+      >
+        Submit
+      </button>
+    </form>
+  );
+};
 
-    
-      const Input = ({ label, placeholder }) => (
-        <div className="flex flex-col">
-          <label className="text-sm font-medium mb-2">{label}</label>
-          <input 
-            type="text" 
-            placeholder={placeholder} 
-            className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#004aad]"
-          />
-        </div>
-      );
-      
-      const Question = ({ label, options }) => (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{label}</p>
-          {options.map((option, index) => (
-            <label key={index} className="flex items-center space-x-2">
-              <input type="radio" name={label} value={option.value} className="text-[#004aad]" />
-              <span>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      );
-      
+// Input Component for Form
+const Input = ({ label, type = 'text', value, onChange, options = [] }) => {
+  if (type === 'radio') {
+    return (
+      <div className="flex items-center space-x-4">
+        <label>{label}</label>
+        {options.map((option) => (
+          <div key={option} className="flex items-center">
+            <input
+              type="radio"
+              value={option}
+              checked={value === option}
+              onChange={() => onChange(option)}
+            />
+            <span className="ml-2">{option}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
+  return (
+    <div className="space-y-2">
+      <label className="font-medium">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+        placeholder={label}
+      />
+    </div>
+  );
+};
 export default MainAppForm;
-

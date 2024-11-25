@@ -11,11 +11,15 @@ app.use(cors({
     origin: 'http://localhost:3000'
 }));
 
+
 // Serve static files from the root public directory
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// Use JSON parsing for all routes
+app.use(express.json());
+
 // Webhook endpoint must use raw body
-app.post('/webhook', express.raw({type: 'application/json'}), async (request, response) => {
+app.post('/webhook', express.raw({ type: 'application/json' }), async (request, response) => {
     const sig = request.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -40,7 +44,6 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
                 }
 
                 // Update user's subscription status in Firebase
-                // You'll need to implement this function to update Firebase
                 await updateUserSubscriptionStatus(userId, status);
                 break;
 
@@ -48,7 +51,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
                 console.log(`Unhandled event type ${event.type}`);
         }
 
-        response.json({received: true});
+        response.json({ received: true });
     } catch (err) {
         console.log(`❌ Webhook Error: ${err.message}`);
         response.status(400).send(`Webhook Error: ${err.message}`);
@@ -56,17 +59,51 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (request, re
     }
 });
 
-// Use JSON parsing for all other routes
-app.use(express.json());
+// Endpoint to get available plans
+app.get('/api/get-plans', async (req, res) => {
+    console.log("inside get plans api");
+    try {
+        // Fetch all prices from Stripe
+        const prices = await stripe.prices.list({
+            active: true,  // Only get active prices
+            limit: 10,     // You can adjust the limit as needed
+        });
+
+        // Fetch associated products to get descriptions
+        const productPromises = prices.data.map((price) =>
+            stripe.products.retrieve(price.product)
+        );
+        const products = await Promise.all(productPromises);
+
+        // Combine price and product data, sort by price
+        const formattedPlans = prices.data
+            .map((price, index) => ({
+                id: price.id,
+                name: products[index]?.name || 'Plan',
+                description: products[index]?.description || 'No description available.',
+                price: price.unit_amount / 100, // Convert to decimal for sorting
+                currency: price.currency.toUpperCase(),
+                priceId: price.id,
+            }))
+            .sort((a, b) => a.price - b.price); // Sort by price (lowest to highest)
+
+        res.json(formattedPlans);
+    } catch (error) {
+        console.error('Error fetching plans:', error);
+        res.status(500).send({ error: 'Failed to fetch plans' });
+    }
+});
 
 // Checkout session endpoint
-app.post('/create-checkout-session', async (req, res) => {
+app.post('/api/create-checkout-session', async (req, res) => {
+    console.log("inside create checkout session api");
     const { priceId, userId, userEmail } = req.body;
-
     try {
+        console.log("inside try");
+        
         // Validate required fields
         if (!priceId || !userId || !userEmail) {
-            throw new Error('Missing required fields');
+            return res.status(400).json({ error: 'Missing required parameters.' });
         }
 
         const session = await stripe.checkout.sessions.create({
@@ -78,8 +115,8 @@ app.post('/create-checkout-session', async (req, res) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.CLIENT_URL}/main-app?success=true`,
-            cancel_url: `${process.env.CLIENT_URL}/subscribe?canceled=true`,
+            success_url: `${process.env.CLIENT_URL}/subscription-status?status=success`,
+            cancel_url: `${process.env.CLIENT_URL}/subscription-status?status=cancelled`,
             client_reference_id: userId,
             customer_email: userEmail,
             allow_promotion_codes: true,
@@ -89,7 +126,7 @@ app.post('/create-checkout-session', async (req, res) => {
             }
         });
 
-        res.json({ sessionId: session.url });
+        res.json({ id: session.id });
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ 
@@ -108,7 +145,7 @@ async function updateUserSubscriptionStatus(userId, status) {
         if (!admin.apps.length) {
             admin.initializeApp({
                 credential: admin.credential.applicationDefault(),
-                // Add your Firebase config here
+                // Add your Firebase config here if needed
             });
         }
 
@@ -131,12 +168,25 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'healthy' });
 });
 
+app.get('/api/stripe-subscription', async (req, res) => {
+    try {
+      const customer = await stripe.customers.retrieve('customer-id');
+      const subscription = await stripe.subscriptions.list({
+        customer: customer.id,
+      });
+  
+      res.json(subscription.data[0]); // Send the first subscription details
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 // Force port 4242 for Stripe webhook testing
 const PORT = process.env.PORT || 4242;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`⭐ Webhook endpoint ready at http://localhost:${PORT}/webhook`);
-    console.log(`🔔 Checkout endpoint ready at http://localhost:${PORT}/create-checkout-session`);
+    console.log(`⭐ Webhook endpoint ready at http://localhost:${PORT}/api/webhook`);
+    console.log(`🔔 Checkout endpoint ready at http://localhost:${PORT}/api/create-checkout-session`);
 });
 
 // Error handling middleware

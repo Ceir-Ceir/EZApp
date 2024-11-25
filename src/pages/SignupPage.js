@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { auth, db } from '../services/firebase'; 
+import { doc, setDoc } from 'firebase/firestore';
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -35,7 +36,16 @@ const Signup = () => {
         }
 
         try {
-            await signup(email, password);
+            const userCredential = await signup(email, password);
+            const user = userCredential.user;
+
+            // Save user data to Firestore
+            await setDoc(doc(db, 'users', user.uid), {
+                email: user.email,
+                createdAt: new Date(),
+                subscriptionStatus: 'free',
+            });
+
             navigate('/subscribe');
         } catch (error) {
             console.error(error);
@@ -49,19 +59,29 @@ const Signup = () => {
     const handleGoogleSignup = async () => {
         setLoading(true);
         setError('');
-        
+    
         try {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
-            console.log('Signed up with Google:', result.user);
+            console.log('Google Sign-In Success:', result.user); // Log user details
+            const user = result.user;
+
+            // Save or update user data in Firestore
+            await setDoc(doc(db, 'users', user.uid), {
+                email: user.email,
+                createdAt: new Date(),
+                subscriptionStatus: 'free',
+            }, { merge: true });
+
             navigate('/subscribe');
         } catch (error) {
-            setError('Failed to sign up with Google.');
-            console.error(error);
+            console.error('Google Sign-In Error:', error);
+            setError(`Failed to sign up with Google: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
+    
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">

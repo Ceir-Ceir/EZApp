@@ -1,4 +1,4 @@
-// src/services/stripeService.js
+// src/services/stripe.js
 import { loadStripe } from '@stripe/stripe-js';
 import { db } from './firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -9,18 +9,26 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 export async function createSubscription(userId, priceId) {
     try {
         const stripe = await stripePromise;
-        
-        // Get user data for the checkout session
-        const userRef = doc(db, 'users', userId);
+
+        // Validate Stripe object
+        if (!stripe) {
+            throw new Error('Stripe.js failed to initialize.');
+        }
+
+        // Get user data from Firestore
+        const userRef = doc(db, 'Users', userId);
         const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
         
-        // Create a new checkout session
-        const response = await fetch('/api/create-checkout-session', {
+        if (!userSnap.exists()) {
+            throw new Error('User not found in Firestore.');
+        }
+
+        const userData = userSnap.data();
+
+        // Call your backend API to create a session
+        const response = await fetch('http://localhost:4242/api/create-session-checkout', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId,
                 priceId,
@@ -28,35 +36,30 @@ export async function createSubscription(userId, priceId) {
             }),
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to create checkout session');
-        }
+        const { sessionId } = await response.json();
 
-        const session = await response.json();
-        
-        // If sessionId is a URL (new Stripe behavior), redirect directly
-        if (session.sessionId.startsWith('http')) {
-            window.location.href = session.sessionId;
-            return;
-        }
-
-        // Otherwise, use redirectToCheckout
-        const result = await stripe.redirectToCheckout({
-            sessionId: session.sessionId
+        // Redirect to Stripe Checkout
+        const { error } = await stripe.redirectToCheckout({
+            sessionId,
         });
 
-        if (result?.error) {
-            throw new Error(result.error.message);
+        if (error) {
+            throw new Error(error.message);
         }
+        
     } catch (error) {
         console.error('Error creating subscription:', error);
         throw error;
     }
 }
 
+// Update the subscription status in Firestore
 export async function handleSubscriptionStatusChange(userId, status) {
+    if (!userId || typeof status !== 'string') {
+        throw new Error('Invalid parameters for updating subscription status.');
+    }
     try {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userId);
         await updateDoc(userRef, {
             subscriptionStatus: status,
             updatedAt: new Date().toISOString()
@@ -67,19 +70,23 @@ export async function handleSubscriptionStatusChange(userId, status) {
     }
 }
 
+// Check the user's subscription status from Firestore
 export async function checkSubscriptionStatus(userId) {
+    console.log("Checking subscription status for user: ", userId)
     try {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userId);
         const userSnap = await getDoc(userRef);
-        
+        console.log("userSnap: ", userSnap);
+
         if (!userSnap.exists()) {
             return 'inactive';
         }
 
         const userData = userSnap.data();
+        console.log("userData: ", userData);
         return userData.subscriptionStatus || 'inactive';
     } catch (error) {
-        console.error('Error checking subscription status:', error);
+        console.error('Error checking subscription status:', error.message);
         return 'inactive';
     }
 }

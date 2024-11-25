@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../services/firebase';
 
 const Login = () => {
@@ -27,11 +27,11 @@ const Login = () => {
         setError('');
 
         try {
-            await login(email, password);
+            await signInWithEmailAndPassword(auth, email, password);
             navigate('/subscribe');
         } catch (error) {
+            console.error('Login Error:', error);
             setError('Failed to log in. Please check your credentials.');
-            console.error(error);
         } finally {
             setLoading(false);
         }
@@ -48,7 +48,7 @@ const Login = () => {
             navigate('/subscribe');
         } catch (error) {
             setError('Failed to log in with Google.');
-            console.error(error);
+            console.error('Google Login Error:', error);
         } finally {
             setLoading(false);
         }
