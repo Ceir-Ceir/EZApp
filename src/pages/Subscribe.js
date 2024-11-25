@@ -1,88 +1,92 @@
-// src/pages/subscribe.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
-import { doc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { db } from '../services/firebase';
 
-const stripePromise = loadStripe(process.env.STRIPE_SECRET_KEY); 
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 const Subscribe = () => {
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
+    const [plans, setPlans] = useState([]);
 
     useEffect(() => {
         if (!currentUser) {
             navigate('/login');
         }
-    
-        // Load Stripe Pricing Table script
-        const script = document.createElement('script');
-        script.src = 'https://js.stripe.com/v3/pricing-table.js';
-        script.async = true;
-        document.body.appendChild(script);
-    
-        return () => {
-            // Cleanup script when component unmounts
-            const existingScript = document.querySelector('script[src="https://js.stripe.com/v3/pricing-table.js"]');
-            console.log('Script exists:', existingScript);
-            if (existingScript && existingScript.parentNode) {
-                existingScript.parentNode.removeChild(existingScript);
-            }
-        };
+
+        // Fetch plans (Optional: If you want dynamic plans)
+        fetch('http://localhost:4242/api/get-plans') // Update with your endpoint
+            .then((res) => res.json())
+            .then((data) => setPlans(data))
+            .catch((err) => {
+                console.error('Error fetching plans:', err);
+                setError('Failed to load plans.');
+            });
     }, [currentUser, navigate]);
 
-    // Function to handle success from Stripe
-    const handleSuccess = async (paymentIntent) => {
+    const handleSubscribe = async (priceId) => {
         try {
-            const subscriptionRef = doc(db, 'subscriptions', currentUser.uid);
-            await setDoc(subscriptionRef, {
-                status: 'active',
-                paymentIntentId: paymentIntent.id,
-                timestamp: new Date(),
+            const stripe = await stripePromise;
+
+            const response = await fetch('http://localhost:4242/api/create-checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    priceId,
+                    userId: currentUser?.uid,
+                    userEmail: currentUser?.email,
+                }),
             });
-            navigate('/dashboard');
-        } catch (error) {
-            console.error("Error saving subscription to Firestore:", error);
-            setError("Something went wrong while saving your subscription. Please try again.");
+
+            const session = await response.json();
+
+            console.log("Session Response:", session);
+
+            if (!response.ok) {
+                console.error('Server error:', session);
+                throw new Error(session.error || 'Server error');
+            }
+    
+            if (session.error) {
+                console.error('Stripe error:', session.error);
+                throw new Error(session.error.message);
+            }
+
+            // Redirect to Stripe Checkout
+            await stripe.redirectToCheckout({ sessionId: session.id });
+        } catch (err) {
+            console.error('Error during subscription:', err.message);
+            setError('Something went wrong. Please try again.');
         }
     };
 
-    // Function to handle failure from Stripe
-    const handleFailure = (error) => {
-        console.error("Payment failed:", error);
-        setError("Payment failed. Please try again.");
-        navigate('/subscribe');
-    };
-
-    // Handle logout
     const handleLogout = async () => {
         try {
-            await logout(); // Assuming logout function from AuthContext
+            await logout();
             navigate('/login');
         } catch (error) {
-            console.error("Error logging out:", error);
-            setError("Logout failed. Please try again.");
+            console.error('Error logging out:', error);
+            setError('Logout failed. Please try again.');
         }
     };
-    
+
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
-            {/* Logout Button - Display only if the user is logged in */}
             {currentUser && (
-                    <div className="text-center mt-8">
-                        <button
-                            onClick={handleLogout}
-                            className="bg-red-600 text-white py-2 px-4 rounded-md"
-                        >
-                            Logout
-                        </button>
-                    </div>
-                )}
+                <div className="text-center mt-8">
+                    <button
+                        onClick={handleLogout}
+                        className="bg-red-600 text-white py-2 px-4 rounded-md"
+                    >
+                        Logout
+                    </button>
+                </div>
+            )}
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="text-center">
                     <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
                         Choose Your Plan
@@ -92,7 +96,6 @@ const Subscribe = () => {
                     </p>
                 </div>
 
-                {/* Error Display */}
                 {error && (
                     <div className="max-w-md mx-auto mt-8">
                         <div className="bg-red-100 text-red-700 p-4 rounded-md">
@@ -101,17 +104,20 @@ const Subscribe = () => {
                     </div>
                 )}
 
-                {/* Stripe Pricing Table */}
-                <div className="mt-12">
-                    <stripe-pricing-table 
-                        pricing-table-id="prctbl_1QKsvxK15hFjPN4iIj6XoBYS"
-                        publishable-key="pk_test_51QJhxLK15hFjPN4iALvmbUuaKxuNE3pthjbKBxNmKO5nrOxXNxgDs5KPxPSrCebcRL59697NZppmi2RTprQCibl000uyb5mhWP"
-                        client-reference-id={currentUser?.uid}
-                        customer-email={currentUser?.email}
-                        onPaymentSuccess={handleSuccess}  // Callback on successful payment
-                        onPaymentFailure={handleFailure}  // Callback on failed payment
-                        >
-                    </stripe-pricing-table>
+                <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {plans.map((plan) => (
+                        <div key={plan.id} className="border rounded-lg p-6 shadow-md">
+                            <h3 className="text-xl font-semibold">{plan.name}</h3>
+                            <p className="mt-4 text-gray-600">{plan.description}</p>
+                            <p className="mt-2 text-lg font-bold">{plan.price}</p>
+                            <button
+                                onClick={() => handleSubscribe(plan.id)}
+                                className="bg-blue-600 text-white mt-4 py-2 px-4 rounded-md"
+                            >
+                                Subscribe
+                            </button>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

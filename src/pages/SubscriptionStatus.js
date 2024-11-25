@@ -1,5 +1,5 @@
-// src/pages/subscrptionStatus.js
-import React, { useEffect } from 'react';
+// src/pages/subscriptionStatus.js
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { checkSubscriptionStatus, isSubscriptionActive } from '../services/stripe';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ export default function SubscriptionStatus() {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function validateSubscription() {
@@ -21,30 +22,32 @@ export default function SubscriptionStatus() {
                 const query = new URLSearchParams(location.search);
                 const status = query.get('status');
 
-                if (status === 'success') {
-                    const subscriptionStatus = await checkSubscriptionStatus(currentUser.uid);
+                switch (status) {
+                    case 'success':
+                        navigate('/main-app-forms');
+                        
+                        break;
 
-                    if (isSubscriptionActive(subscriptionStatus)) {
-                        alert('Subscription successful!');
-                        navigate('/dashboard'); // Redirect to the dashboard or main app area
-                    } else {
-                        alert('Subscription processing. Please wait a moment and refresh the page.');
-                    }
-                } else if (status === 'cancelled') {
-                    alert('Subscription cancelled. You can try again.');
-                    navigate('/subscribe'); // Redirect back to the subscription page
-                } else {
-                    alert('Subscription validation failed. Please contact support.');
+                    case 'cancelled':
+                        alert('Subscription cancelled. You can try again.');
+                        navigate('/subscribe');
+                        break;
+
+                    default:
+                        alert('Subscription validation failed. Please contact support.');
+                        navigate('/subscribe');
+                        break;
                 }
             } catch (error) {
-                console.error('Error validating subscription:', error.message);
+                console.error('Error validating subscription:', error);
                 alert('Something went wrong while validating your subscription. Please try again.');
                 navigate('/subscribe');
+            } finally {
+                setLoading(false);
             }
         }
 
         validateSubscription();
-    }, [currentUser, navigate, location]);
+    }, [currentUser, navigate, location.search]);
 
-    return <div>Validating your subscription...</div>;
 }

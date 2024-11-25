@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create a user document in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      await setDoc(doc(db, 'Users', userCredential.user.uid), {
         email,
         createdAt: new Date().toISOString(),
         subscriptionStatus: 'inactive'
@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
   }
 
   async function getUserSubscriptionStatus(userId) {
-    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userDoc = await getDoc(doc(db, 'Users', userId));
     if (userDoc.exists()) {
       return userDoc.data().subscriptionStatus;
     }

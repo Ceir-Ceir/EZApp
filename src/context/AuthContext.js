@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
             console.log("User created with UID: ", userId);
 
             // Step 2: Save user information in Firestore with 'inactive' subscription status
-            await setDoc(doc(db, 'users', userId), {
+            await setDoc(doc(db, 'Users', userId), {
                 email,
                 createdAt: new Date().toISOString(),
                 subscriptionStatus: 'inactive'
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
 
     async function getUserSubscriptionStatus(userId) {
         try {
-            const userDoc = await getDoc(doc(db, 'users', userId));
+            const userDoc = await getDoc(doc(db, 'Users', userId));
             if (userDoc.exists()) {
                 return userDoc.data().subscriptionStatus;
             }

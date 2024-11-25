@@ -14,8 +14,8 @@ export async function createSubscription(userId, priceId) {
         if (!stripe) {
             throw new Error('Stripe.js failed to initialize.');
         }
-        
-        // Get user data for the checkout session
+
+        // Get user data from Firestore
         const userRef = doc(db, 'users', userId);
         const userSnap = await getDoc(userRef);
         
@@ -24,18 +24,28 @@ export async function createSubscription(userId, priceId) {
         }
 
         const userData = userSnap.data();
-         // Create a Checkout Session directly using Stripe.js
-         const { error } = await stripe.redirectToCheckout({
-            mode: 'subscription',
-            lineItems: [{ price: priceId, quantity: 1 }],
-            customerEmail: userData.email,
-            successUrl: `${window.location.origin}/subscription-status?status=success`,
-            cancelUrl: `${window.location.origin}/subscription-status?status=cancelled`,
+
+        // Call your backend API to create a session
+        const response = await fetch('http://localhost:4242/api/create-session-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId,
+                priceId,
+                email: userData.email,
+            }),
         });
+
+        const { sessionId } = await response.json();
+
+        // Redirect to Stripe Checkout
+        const { error } = await stripe.redirectToCheckout({
+            sessionId,
+        });
+
         if (error) {
             throw new Error(error.message);
         }
-
         
     } catch (error) {
         console.error('Error creating subscription:', error);
@@ -62,15 +72,18 @@ export async function handleSubscriptionStatusChange(userId, status) {
 
 // Check the user's subscription status from Firestore
 export async function checkSubscriptionStatus(userId) {
+    console.log("Checking subscription status for user: ", userId)
     try {
         const userRef = doc(db, 'users', userId);
         const userSnap = await getDoc(userRef);
+        console.log("userSnap: ", userSnap);
 
         if (!userSnap.exists()) {
             return 'inactive';
         }
 
         const userData = userSnap.data();
+        console.log("userData: ", userData);
         return userData.subscriptionStatus || 'inactive';
     } catch (error) {
         console.error('Error checking subscription status:', error.message);
