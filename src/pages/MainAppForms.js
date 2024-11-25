@@ -31,7 +31,7 @@ const MainAppForm = () => {
 
   const saveToFirestore = async () => {
     try {
-      const docRef = doc(db, 'users', userData.email); // Document ID is email
+      const docRef = doc(db, 'Users', userData.email); // Document ID is email
       await setDoc(docRef, userData);
       alert('Data saved successfully!');
       navigate('/dashboard'); // Redirect to dashboard

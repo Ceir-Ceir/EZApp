@@ -14,13 +14,13 @@ const DashboardView = () => {
 
   const auth = getAuth();
   const userId = auth.currentUser?.uid; // Get the authenticated user's ID
-
+  const userEmail = auth.currentUser?.email;
   // Fetch user data from Firestore and subscription status
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch user data
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userEmail);
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {

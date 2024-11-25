@@ -16,7 +16,7 @@ export async function createSubscription(userId, priceId) {
         }
 
         // Get user data from Firestore
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userId);
         const userSnap = await getDoc(userRef);
         
         if (!userSnap.exists()) {
@@ -59,7 +59,7 @@ export async function handleSubscriptionStatusChange(userId, status) {
         throw new Error('Invalid parameters for updating subscription status.');
     }
     try {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userId);
         await updateDoc(userRef, {
             subscriptionStatus: status,
             updatedAt: new Date().toISOString()
@@ -74,7 +74,7 @@ export async function handleSubscriptionStatusChange(userId, status) {
 export async function checkSubscriptionStatus(userId) {
     console.log("Checking subscription status for user: ", userId)
     try {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userId);
         const userSnap = await getDoc(userRef);
         console.log("userSnap: ", userSnap);
 

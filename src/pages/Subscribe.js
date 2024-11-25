@@ -76,16 +76,6 @@ const Subscribe = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
-            {currentUser && (
-                <div className="text-center mt-8">
-                    <button
-                        onClick={handleLogout}
-                        className="bg-red-600 text-white py-2 px-4 rounded-md"
-                    >
-                        Logout
-                    </button>
-                </div>
-            )}
             <div className="max-w-7xl mx-auto">
                 <div className="text-center">
                     <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
