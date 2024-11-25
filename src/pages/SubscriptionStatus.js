@@ -1,14 +1,16 @@
 // src/pages/subscriptionStatus.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { checkSubscriptionStatus, isSubscriptionActive } from '../services/stripe';
 import { useAuth } from '../context/AuthContext';
+import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 
 export default function SubscriptionStatus() {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [loading, setLoading] = useState(true);
+
+    const db = getFirestore();
 
     useEffect(() => {
         async function validateSubscription() {
@@ -24,8 +26,8 @@ export default function SubscriptionStatus() {
 
                 switch (status) {
                     case 'success':
-                        navigate('/main-app-forms');
-                        
+                        await updateSubscriptionStatus('active');
+                        navigate('/main-app-forms'); 
                         break;
 
                     case 'cancelled':
@@ -50,4 +52,24 @@ export default function SubscriptionStatus() {
         validateSubscription();
     }, [currentUser, navigate, location.search]);
 
+    const updateSubscriptionStatus = async (status) => {
+        try {
+            if (!currentUser) {
+                console.error('No current user to update subscription status');
+                return;
+            }
+
+            const userEmail = currentUser.email; // Use the user's email
+            const userRef = doc(db, 'Users', userEmail); // Reference to the user's document using email as ID
+            await updateDoc(userRef, {
+                subscriptionStatus: status, // Update subscription status
+                subscriptionUpdatedAt: new Date(), // Add a timestamp for the update
+            });
+            console.log('Subscription status updated to:', status);
+        } catch (error) {
+            console.error('Error updating subscription status:', error);
+        }
+    };
+
+  
 }

@@ -91,15 +91,23 @@ const DashboardView = () => {
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold">Personal Information</h2>
-            <p><strong>Name:</strong> {userData.name}</p>
+            <p><strong>Name:</strong> {userData.fullName}</p>
             <p><strong>Email:</strong> {userData.email}</p>
+            <p><strong>Phone:</strong> {userData.phone}</p>
+            <p><strong>Linkedin:</strong> {userData.linkedIn}</p>
           </div>
 
           <div>
             <h2 className="text-xl font-semibold">Demographics</h2>
-            <p><strong>Gender:</strong> {userData.demographics?.gender}</p>
-            <p><strong>Age:</strong> {userData.demographics?.age}</p>
-            <p><strong>Location:</strong> {userData.demographics?.location}</p>
+            <p><strong>Are you over 18?:</strong> {userData.over18}</p>
+            <p><strong>Work Authorization:</strong> {userData.workAuth}</p>
+            <p><strong>Gender:</strong> {userData.gender}</p>
+            <p><strong>Sponsorship Needed?:</strong> {userData.sponsorship}</p>
+            <p><strong>Preferred Pronouns:</strong> {userData.pronouns}</p>
+            <p><strong>Disability Status:</strong> {userData.disability}</p>
+            <p><strong>Veteran Status:</strong> {userData.veteran}</p>
+            <p><strong>Race/Ethnicity:</strong> {userData.race}</p>
+            <p><strong>Are you Hispanic or Latino?:</strong> {userData.hispanic}</p>
           </div>
 
           <div>
@@ -151,17 +159,11 @@ const DashboardView = () => {
         {subscriptionStatus && (
           <div className="mt-8">
             <h2 className="text-xl font-semibold">Subscription Details</h2>
-            <p><strong>Status:</strong> {subscriptionStatus}</p>
+            <p><strong>Status:</strong> {userData.subscriptionStatus}</p>
           </div>
         )}
 
-        {/* Edit Profile Button */}
-        <button
-          onClick={() => alert('Edit Profile Clicked!')}
-          className="mt-4 w-full bg-blue-500 text-white py-3 rounded-lg font-semibold"
-        >
-          Edit Profile
-        </button>
+       
       </div>
     </div>
   );

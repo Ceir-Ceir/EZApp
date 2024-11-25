@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from '../context/AuthContext';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
@@ -10,10 +11,16 @@ const Subscribe = () => {
     const navigate = useNavigate();
     const [error, setError] = useState('');
     const [plans, setPlans] = useState([]);
+    const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
+    const db = getFirestore(); // Initialize Firestore
 
     useEffect(() => {
         if (!currentUser) {
             navigate('/login');
+        } else {
+            // Fetch subscription status from Firestore when the user is logged in
+            fetchSubscriptionStatus();
         }
 
         // Fetch plans (Optional: If you want dynamic plans)
@@ -64,15 +71,34 @@ const Subscribe = () => {
         }
     };
 
-    const handleLogout = async () => {
+    // Fetch subscription status from Firestore based on current user's email
+    const fetchSubscriptionStatus = async () => {
         try {
-            await logout();
-            navigate('/login');
+            if (currentUser && currentUser.email) {
+                const userRef = doc(db, 'Users', currentUser.email);
+                const docSnap = await getDoc(userRef);
+
+                if (docSnap.exists()) {
+                    setSubscriptionStatus(docSnap.data().subscriptionStatus); // Set the status from Firestore
+                } else {
+                    console.error('No such document!');
+                    setSubscriptionStatus('inactive'); // Default to inactive if no status found
+                }
+            }
         } catch (error) {
-            console.error('Error logging out:', error);
-            setError('Logout failed. Please try again.');
+            console.error('Error fetching subscription status:', error);
+            setError('Failed to fetch subscription status.');
         }
     };
+
+
+
+        // Redirect if already subscribed
+        useEffect(() => {
+            if (subscriptionStatus === 'active') {
+                navigate('/dashboard');
+            }
+        }, [subscriptionStatus, navigate]);
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
