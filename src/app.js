@@ -22,32 +22,16 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* Protected Routes (commented out for now) */}
-          <Route
-            path="/subscribe"
-            element={
-              <Subscribe />
-              // <ProtectedRoute>
-              //   <Subscribe />
-              // </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscription-flow"
-            element={
-              <SubscriptionFlow />
-              // <ProtectedRoute>
-              //   <SubscriptionFlow />
-              // </ProtectedRoute>
-            }
-          />
+          {/* Subscription Routes */}
+          <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/subscription-flow" element={<SubscriptionFlow />} />
 
-          {/* Main App Pages */}
-          <Route path="/main-app" element={<MainApp />} />
-          <Route path="/dashboard" element={<DashboardView />} />
-          <Route path="/job-search" element={<JobSearch />} />
-          <Route path="/main-app-forms" element={<MainAppForm />} />
-          <Route path="/subscription-status" element={<SubscriptionStatus />} />
+          {/* Main App with Nested Routes */}
+          <Route path="/main-app" element={<MainApp />}>
+            <Route index element={<MainAppForm />} />
+            <Route path="dashboard" element={<DashboardView />} />
+            <Route path="job-search" element={<JobSearch />} />
+          </Route>
         </Routes>
       </Router>
     </AuthProvider>
@@ -55,4 +39,3 @@ function App() {
 }
 
 export default App;
-// testing new modification. 
