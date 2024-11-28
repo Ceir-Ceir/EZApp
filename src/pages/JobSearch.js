@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Select from "react-select";
+import { db } from '../services/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const jobOptions = [ // List of job options
   { value: "Accountant", label: "Accountant" },
@@ -340,17 +343,6 @@ const jobOptions = [ // List of job options
   // Add the rest similarly!
 ].sort((a, b) => a.label.localeCompare(b.label));
 
-const salaryRangeOptions = [ // salary range options here
-  { value: "30-50k", label: "$30,000 - $50,000" },
-  { value: "50-70k", label: "$50,000 - $70,000" },
-  { value: "70-90k", label: "$70,000 - $90,000" },
-  { value: "90-110k", label: "$90,000 - $110,000" },
-  { value: "110-130k", label: "$110,000 - $130,000" },
-  { value: "130-150k", label: "$130,000 - $150,000" },
-  { value: "150k+", label: "$150,000+" }
-];
-
-
 const industryOptions = [
   { value: "Healthcare", label: "Healthcare" },
   { value: "Technology", label: "Technology" },
@@ -374,15 +366,26 @@ const industryOptions = [
   { value: "Automotive", label: "Automotive" }
 ].sort((a, b) => a.label.localeCompare(b.label));
 
+const salaryRangeOptions = [ // salary range options here
+  { value: "30-50k", label: "$30,000 - $50,000" },
+  { value: "50-70k", label: "$50,000 - $70,000" },
+  { value: "70-90k", label: "$70,000 - $90,000" },
+  { value: "90-110k", label: "$90,000 - $110,000" },
+  { value: "110-130k", label: "$110,000 - $130,000" },
+  { value: "130-150k", label: "$130,000 - $150,000" },
+  { value: "150k+", label: "$150,000+" }
+];
 
 const JobSearch = () => {
   const [activeStep, setActiveStep] = useState(1); // Tracks the current step
+  const [panesVisible, setPanesVisible] = useState(true);
   const [jobPreferences, setJobPreferences] = useState({
-    jobTitle: null,
+
+    jobTitle: "",
     industry: "",
     employmentType: "",
     location: "",
-    salaryExpectation: "",
+    salaryExpectation: { min: "", max: "" },
   });
   const [skills, setSkills] = useState([]);
   const [software, setSoftware] = useState([{ tool: "", proficiency: "" }]);
@@ -391,23 +394,47 @@ const JobSearch = () => {
     willingToRelocate: "",
     links: "",
   });
+  const [jobs, setJobs] = useState([]); // Store fetched jobs
+  const [filteredJobs, setFilteredJobs] = useState([]); // Store filtered jobs
 
-  const handleNext = () => {
-    if (activeStep < 3) {
-      setActiveStep(activeStep + 1);
-    } else {
-      console.log("Job Preferences:", jobPreferences);
-      console.log("Skills:", skills);
-      console.log("Software/Tools:", software);
-      console.log("Additional Information:", additionalInfo);
-      alert("Form submitted!");
+  const resetFilters = () => {
+    setJobPreferences({
+      jobTitle: "",
+      industry: "",
+      employmentType: "",
+      location: "",
+      salaryExpectation: { min: "", max: "" },
+    });
+    setSkills([]); // Clear skills as well
+    setSoftware([{ tool: "", proficiency: "" }]); // Clear software list
+    setAdditionalInfo({
+      certifications: [{ name: "", organization: "", issueDate: "", expirationDate: "" }],
+      willingToRelocate: "",
+      links: "",
+    });
+    setFilteredJobs([]); // Clear filtered jobs
+    setActiveStep(1); // Reset to the first step
+    setPanesVisible(true);
+  };
+
+  // Function to handle adding a new skill
+  const handleAddSkill = (e) => {
+    if (e.key === "Enter" && e.target.value.trim() !== "") {
+      const newSkill = e.target.value.trim();
+      setSkills((prevSkills) => {
+        // Prevent adding duplicate skills
+        if (!prevSkills.includes(newSkill)) {
+          return [...prevSkills, newSkill];
+        }
+        return prevSkills;
+      });
+      e.target.value = "";
     }
   };
 
-  const handlePrevious = () => {
-    if (activeStep > 1) {
-      setActiveStep(activeStep - 1);
-    }
+  // Function to remove a skill
+  const handleRemoveSkill = (skillToRemove) => {
+    setSkills(skills.filter((skill) => skill !== skillToRemove));
   };
 
   const handleAddSoftware = () => {
@@ -431,231 +458,539 @@ const JobSearch = () => {
     setAdditionalInfo({ ...additionalInfo, certifications: updatedCertifications });
   };
 
+  const auth = getAuth();
+  const userId = auth.currentUser?.uid; // Get the authenticated user's ID
+  const userEmail = auth.currentUser?.email;
+
+  // Fetch jobs data from Firestore
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "jobs"));
+        const jobList = querySnapshot.docs.map(doc => doc.data());
+        setJobs(jobList);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      }
+    };
+
+    fetchJobs();
+  }, []); // Empty dependency array to fetch jobs once when the component mounts
+
+  useEffect(() => {
+    // Filter jobs whenever the jobPreferences, skills, or software change
+    const filtered = filterJobs();
+    setFilteredJobs(filtered);
+  }, [jobPreferences, skills, software, additionalInfo]); // Dependency array to trigger filtering
+
+
+  const filterJobs = () => {
+    let filtered = jobs;
+    console.log("Initial Jobs:", jobs);
+
+    if (jobPreferences.jobTitle && typeof jobPreferences.jobTitle === 'string' && jobPreferences.jobTitle.trim() !== '') {
+      console.log("Filtering by Job Title:", jobPreferences.jobTitle); // Log the selected job title
+
+      filtered = filtered.filter(job => {
+        const jobTitle = job.title ? job.title.toLowerCase().trim() : '';
+        const preferenceJobTitle = jobPreferences.jobTitle.toLowerCase().trim();
+
+        console.log("Job title:", jobTitle); // Log job title for debugging
+        console.log("Selected job title preference:", preferenceJobTitle); // Log selected job title preference
+
+        return jobTitle.includes(preferenceJobTitle);
+      });
+
+    } else {
+      console.log("No job title filter applied.");
+    }
+
+    if (jobPreferences.industry && typeof jobPreferences.industry === 'string' && jobPreferences.industry.trim() !== '') {
+      console.log("Filtering by Industry:", jobPreferences.industry); // Log the selected industry
+
+      filtered = filtered.filter(job => {
+        const jobIndustry = job.industry ? job.industry.toLowerCase().trim() : ''; // Ensure it's a valid string and trim spaces
+        const preferenceIndustry = jobPreferences.industry.toLowerCase().trim(); // Trim the preference value
+
+        console.log("Job industry:", jobIndustry); // Log job industry for debugging
+        console.log("Selected industry preference:", preferenceIndustry); // Log selected industry preference
+
+        return jobIndustry.includes(preferenceIndustry); // Check if the industry is included
+      });
+    } else {
+      console.log("No industry filter applied.");
+    }
+
+
+    if (jobPreferences.employmentType && typeof jobPreferences.employmentType === 'string') {
+      console.log("Filtering by Employment Type:", jobPreferences.employmentType);  // Log selected employment type
+      filtered = filtered.filter(job => {
+        console.log("Job Employment Type:", job.employmentType);  // Log each job's employment type
+        return job.employmentType === jobPreferences.employmentType;
+      });
+      console.log("Jobs after Employment Type filter:", filtered);
+    }
+
+    if (jobPreferences.location && typeof jobPreferences.location === 'string') {
+      filtered = filtered.filter(job =>
+        job.location.toLowerCase().includes(jobPreferences.location.toLowerCase())
+      );
+    }
+    // Filter by salary expectation
+    if (jobPreferences.salaryExpectation) {
+      console.log("salaryExpectation: ", jobPreferences.salaryExpectation);
+
+      const { min, max } = jobPreferences.salaryExpectation;
+
+      // Check if min and max are provided and valid numbers
+      const parsedMin = min && !isNaN(min) ? parseInt(min) : null;
+      const parsedMax = max && !isNaN(max) ? parseInt(max) : null;
+
+      console.log("Selected Salary Range:", { min: parsedMin, max: parsedMax });
+
+      if (parsedMin !== null || parsedMax !== null) {
+        // Proceed only if at least one boundary is valid
+        filtered = filtered.filter((job) => {
+          // Ensure salary is parsed as an integer before comparison
+          const jobSalary = parseInt(job.salary);
+
+          // Debugging job salary value
+          console.log("Job Salary:", job.salary, "Parsed Salary:", jobSalary);
+
+          if (isNaN(jobSalary)) {
+            console.log("Invalid salary value for job:", job);
+            return false;
+          }
+
+          // Check if the job salary is within the selected range
+          const isWithinRange =
+            (isNaN(parsedMin) || jobSalary >= parsedMin) &&
+            (isNaN(parsedMax) || jobSalary <= parsedMax);
+
+          console.log(`Is Job Salary (${jobSalary}) within Range [${parsedMin}, ${parsedMax}]?`, isWithinRange);
+
+          return isWithinRange;
+        });
+      } else {
+        console.log("Invalid salary range. Skipping salary filter.");
+      }
+    } else {
+      console.log("No salary expectation provided. Skipping salary filter.");
+    }
+
+    // Filter by skills (if any skills are selected)
+    if (skills.length > 0) {
+      console.log("Filtering by Skills:", skills); // Log selected skills
+
+      filtered = filtered.filter((job) => {
+        // Check if job.skills is an array; if not, split it into an array
+        const jobSkills = Array.isArray(job.skills) ? job.skills : job.skills.split(',').map(skill => skill.trim());
+
+        console.log("Job Skills Array:", jobSkills); // Log job skills to see how they're stored
+
+        // Check if every skill in the selected skills list is included in the job skills
+        return skills.every(skill => jobSkills.includes(skill.toLowerCase()));
+      });
+    }
+
+
+    // Filter by software (if any software is selected)
+    if (software.length > 0) {
+      console.log("Filtering by software:", software);
+      filtered = filtered.filter(job => {
+        // If no software field exists in job, exclude only when filter is active
+        if (!job.software || job.software.length === 0) {
+          console.log("No software listed for this job:", job);
+          return true; // Keep this job if no software filter is active
+        }
+
+        // Otherwise, check for software match
+        const matches = software.every(soft =>
+          job.software.some(item =>
+            item.tool?.toLowerCase().includes(soft.tool.toLowerCase()) &&
+            item.proficiency?.toLowerCase().includes(soft.proficiency.toLowerCase())
+          )
+        );
+        console.log("Job software matches:", matches, job);
+        return matches;
+      });
+    } else {
+      console.log("No software filter applied, keeping all jobs with or without software.");
+    }
+
+
+    // Filter by Certifications (if any valid certifications are specified)
+    if (additionalInfo.certifications && additionalInfo.certifications.length > 0) {
+      filtered = filtered.filter(job => {
+        return additionalInfo.certifications.every(cert => {
+          // Only apply filtering if both 'name' and 'organization' are non-empty
+          if (cert.name && cert.organization) {
+            return job.certifications?.some(jobCert =>
+              jobCert.name?.toLowerCase().includes(cert.name.toLowerCase()) &&
+              jobCert.organization?.toLowerCase().includes(cert.organization.toLowerCase())
+            );
+          }
+          // If the certification is empty, skip filtering
+          return true;
+        });
+      });
+    } else {
+      console.log("No certifications filter applied, keeping all jobs with or without certifications.");
+    }
+
+
+
+    // Filter by willing to relocate
+    if (additionalInfo.willingToRelocate && typeof additionalInfo.willingToRelocate === 'string') {
+      console.log("Filtering by Willing to Relocate:", additionalInfo.willingToRelocate); // Log the willingness to relocate
+
+      // Ensure it's 'yes' (case-insensitive) before filtering
+      if (additionalInfo.willingToRelocate.toLowerCase() === 'yes') {
+        console.log("Job willing to relocate filter applied.");
+
+        filtered = filtered.filter(job => {
+          // Convert string 'false'/'true' to boolean
+          const willingToRelocate = job.willingToRelocate === 'true'; // Convert string to boolean
+
+          if (typeof willingToRelocate === 'boolean') {
+            return willingToRelocate === true; // Only return jobs where willingToRelocate is true
+          } else {
+            console.warn("Invalid willingToRelocate value for job:", job);
+            return false; // If the value is invalid, exclude this job from the filtered results
+          }
+        });
+      } else {
+        console.log("No relocation filter applied.");
+      }
+    } else {
+      console.log("Willing to Relocate filter is not selected or invalid.");
+    }
+
+
+
+    // Filter by provided links (LinkedIn, portfolio, etc.)
+    if (additionalInfo.links && typeof additionalInfo.links === 'string' && additionalInfo.links.trim() !== "") {
+      console.log("Filtering by Links:", additionalInfo.links); // Log the links to be filtered by
+
+      filtered = filtered.filter(job => {
+        if (Array.isArray(job.links)) {
+          const matchFound = job.links.some(link => link.includes(additionalInfo.links.trim()));
+          if (matchFound) {
+            console.log("Link match found for job:", job.title);
+          }
+          return matchFound;
+        } else {
+          console.warn("Job links are not an array for job:", job);
+          return false;
+        }
+      });
+    } else {
+      console.log("No valid links provided for filtering.");
+    }
+
+    // Return the filtered jobs
+    console.log("Filtered Jobs:", filtered);
+    return filtered;
+  };
+
+  const parseRange = (range) => {
+    console.log("Range to parse: ", range);
+
+    // If range.min and range.max are numbers, return them directly
+    if (typeof range.min === 'number' && typeof range.max === 'number') {
+      console.log("Parsed range: ", { min: range.min, max: range.max });
+      return { min: range.min, max: range.max };
+    }
+
+    if (range.value && typeof range.value === 'string') {
+      const [minValue, maxValue] = range.value.split("-");
+
+      // Parse the min value
+      const min = minValue.includes("k")
+        ? parseInt(minValue.replace("k", "")) * 1000
+        : parseInt(minValue) * 1000;
+
+      let max = null;
+      if (maxValue) {
+        if (maxValue.includes("k")) {
+          max = parseInt(maxValue.replace("k", "")) * 1000;
+        } else if (maxValue === "150k+") {
+          max = Infinity; // Set to a very large number for open-ended ranges
+        } else {
+          max = parseInt(maxValue) * 1000;
+        }
+      }
+
+      console.log("Parsed range: ", { min, max });
+      return { min, max };
+    }
+
+    console.error("Invalid range value. Expected a string or numeric range:", range);
+    return { min: null, max: null };
+  }
+
+  const handleSubmit = () => {
+    // Ensure filteredJobs is updated with the filtered result
+    const filtered = filterJobs();
+    console.log(filtered);
+    setFilteredJobs(filtered);
+
+    // Hide the form fields after submission
+    setActiveStep(4);
+    setPanesVisible(false);
+  };
+
+  const JobPreferencesForm = ({ jobPreferences, setJobPreferences }) => {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Job Preferences</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            options={jobOptions}
+            value={jobPreferences.jobTitle}
+            onChange={(selectedOption) => {
+              // Assuming selectedOption is an object with label and value
+              const selectedValue = selectedOption ? selectedOption.value : '';
+              setJobPreferences({ ...jobPreferences, jobTitle: selectedValue });
+            }}
+            placeholder="Select Job Title"
+            isSearchable
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+
+          <Select
+            options={industryOptions}
+            value={industryOptions.find(option => option.value === jobPreferences.industry)} // Set selected industry
+            onChange={(selectedOption) =>
+              setJobPreferences({ ...jobPreferences, industry: selectedOption.value }) // Update industry in preferences
+            }
+            placeholder="Select Preferred Industry"
+            isSearchable
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+          <select
+            value={jobPreferences.employmentType}
+            onChange={(e) => setJobPreferences({ ...jobPreferences, employmentType: e.target.value })}
+            className="border border-gray-300 rounded-lg px-4 py-2"
+          >
+            <option value="" disabled>
+              Employment Type
+            </option>
+            <option value="Full-Time">Full-Time</option>
+            <option value="Part-Time">Part-Time</option>
+            <option value="Contract">Contract</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Preferred Location"
+            value={jobPreferences.location}
+            onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
+            className="border border-gray-300 rounded-lg px-4 py-2"
+          />
+          <Select
+            options={salaryRangeOptions}
+            value={salaryRangeOptions.find(option =>
+              option.value === `${jobPreferences.salaryExpectation.min / 1000}-${jobPreferences.salaryExpectation.max / 1000 || "150k+"}`
+            )}
+            onChange={(selectedOption) => {
+              // Log the selected option
+              console.log("Selected Salary Range:", selectedOption);
+
+              // Parse and set the salaryExpectation in the state
+              setJobPreferences({
+                ...jobPreferences,
+                salaryExpectation: parseRange(selectedOption),
+              });
+            }}
+            placeholder="Select Salary Range"
+            isSearchable
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const SkillsAndSoftwareForm = ({ skills, setSkills, software, setSoftware, handleAddSoftware, handleRemoveSoftware }) => {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Skills</h2>
+        {/* Skills Input */}
+        <div className="skills-input">
+          <input
+            type="text"
+            placeholder="Press Enter to add skills"
+            onKeyDown={handleAddSkill}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6"
+          />
+          <div className="tags">
+            {skills.map((skill, index) => (
+              <div
+                key={index}
+                className="tag"
+                onClick={() => handleRemoveSkill(skill)}
+                style={{ display: "inline-block", margin: "5px", padding: "5px", backgroundColor: "#e0e0e0", borderRadius: "12px" }}
+              >
+                {skill} <span style={{ marginLeft: "8px", cursor: "pointer" }}>x</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <h2 className="text-xl font-semibold mb-4">Software/Tools</h2>
+        {software.map((entry, index) => (
+          <div key={index} className="flex gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Software/Tool"
+              value={entry.tool}
+              onChange={(e) =>
+                setSoftware((prevSoftware) =>
+                  prevSoftware.map((item, i) => (i === index ? { ...item, tool: e.target.value } : item))
+                )
+              }
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+            />
+            <select
+              value={entry.proficiency}
+              onChange={(e) =>
+                setSoftware(software.map((item, i) => (i === index ? { ...item, proficiency: e.target.value } : item)))
+              }
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+            >
+              <option value="" disabled>
+                Proficiency Level
+              </option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+            <button onClick={() => handleRemoveSoftware(index)} className="text-red-500 hover:underline">
+              Remove
+            </button>
+          </div>
+        ))}
+        <button onClick={handleAddSoftware} className="text-blue-600 hover:underline">
+          + Add Software/Tool
+        </button>
+      </div>
+    );
+  };
+
+  const AdditionalInfoForm = ({ additionalInfo, setAdditionalInfo, handleAddCertification, handleRemoveCertification }) => {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
+        {additionalInfo.certifications.map((cert, index) => (
+          <div key={index} className="mb-4">
+            <input
+              type="text"
+              placeholder="Certification"
+              value={cert.name}
+              onChange={(e) =>
+                setAdditionalInfo({
+                  ...additionalInfo,
+                  certifications: additionalInfo.certifications.map((item, i) =>
+                    i === index ? { ...item, name: e.target.value } : item
+                  ),
+                })
+              }
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+            />
+            <input
+              type="text"
+              placeholder="Organization"
+              value={cert.organization}
+              onChange={(e) =>
+                setAdditionalInfo({
+                  ...additionalInfo,
+                  certifications: additionalInfo.certifications.map((item, i) =>
+                    i === index ? { ...item, organization: e.target.value } : item
+                  ),
+                })
+              }
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+            />
+            <input
+              type="text"
+              placeholder="Issue Date"
+              value={cert.issueDate}
+              onChange={(e) =>
+                setAdditionalInfo({
+                  ...additionalInfo,
+                  certifications: additionalInfo.certifications.map((item, i) =>
+                    i === index ? { ...item, issueDate: e.target.value } : item
+                  ),
+                })
+              }
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+            />
+            <input
+              type="text"
+              placeholder="Expiration Date"
+              value={cert.expirationDate}
+              onChange={(e) =>
+                setAdditionalInfo({
+                  ...additionalInfo,
+                  certifications: additionalInfo.certifications.map((item, i) =>
+                    i === index ? { ...item, expirationDate: e.target.value } : item
+                  ),
+                })
+              }
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
+            <button
+              onClick={() => handleRemoveCertification(index)}
+              className="text-red-500 hover:underline mt-2"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button onClick={handleAddCertification} className="text-blue-600 hover:underline mb-4">
+          + Add Certification
+        </button>
+        <h2 className="text-xl font-semibold mb-4">Open to Relocation?</h2>
+        <div className="flex items-center gap-4">
+          <label>
+            <input
+              type="radio"
+              name="relocation"
+              value="Yes"
+              checked={additionalInfo.willingToRelocate === "Yes"}
+              onChange={(e) => setAdditionalInfo({ ...additionalInfo, willingToRelocate: e.target.value })}
+              className="mr-2"
+            /> Yes
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="relocation"
+              value="No"
+              checked={additionalInfo.willingToRelocate === "No"}
+              onChange={(e) => setAdditionalInfo({ ...additionalInfo, willingToRelocate: e.target.value })}
+              className="mr-2"
+            /> No
+          </label>
+        </div>
+        <h2 className="text-xl font-semibold mb-4 mt-6">Relevant Links</h2>
+        <textarea
+          placeholder="Enter any relevant links (e.g., portfolio, LinkedIn)"
+          value={additionalInfo.links}
+          onChange={(e) => setAdditionalInfo({ ...additionalInfo, links: e.target.value })}
+          className="w-full border border-gray-300 rounded-lg px-4 py-2"
+        />
+      </div>
+    );
+  };
+
   const renderForm = () => {
     switch (activeStep) {
-      case 1: // Job Preferences
-        return (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Job Preferences</h2>
-            <div className="grid grid-cols-2 gap-4">
-            <Select
-              options={jobOptions}
-              value={jobPreferences.jobTitle}
-              onChange={(selectedOption) =>
-                setJobPreferences({ ...jobPreferences, jobTitle: selectedOption })
-              }
-              placeholder="Select Job Title"
-              isSearchable
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-              <Select
-                options={industryOptions}
-                value={jobPreferences.industry}
-                onChange={(selectedOption) =>
-                  setJobPreferences({ ...jobPreferences, industry: selectedOption })
-                }
-                placeholder="Select Preferred Industry"
-                isSearchable
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              />
-              <select
-                value={jobPreferences.employmentType}
-                onChange={(e) => setJobPreferences({ ...jobPreferences, employmentType: e.target.value })}
-                className="border border-gray-300 rounded-lg px-4 py-2"
-              >
-                <option value="" disabled>
-                  Employment Type
-                </option>
-                <option value="Full-Time">Full-Time</option>
-                <option value="Part-Time">Part-Time</option>
-                <option value="Contract">Contract</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Preferred Location"
-                value={jobPreferences.location}
-                onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
-                className="border border-gray-300 rounded-lg px-4 py-2"
-              />
-              <Select
-                options={salaryRangeOptions}
-                value={jobPreferences.salaryExpectation}
-                onChange={(selectedOption) =>
-                  setJobPreferences({ ...jobPreferences, salaryExpectation: selectedOption })
-                }
-                placeholder="Select Salary Range"
-                isSearchable
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              />
-            </div>
-          </div>
-        );
-      case 2: // Skills and Software/Tools
-        return (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Skills</h2>
-            <textarea
-              placeholder="Enter your skills, separated by commas"
-              value={skills.join(", ")}
-              onChange={(e) => setSkills(e.target.value.split(",").map((skill) => skill.trim()))}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6"
-            />
-            <h2 className="text-xl font-semibold mb-4">Software/Tools</h2>
-            {software.map((entry, index) => (
-              <div key={index} className="flex gap-4 mb-4">
-                <input
-                  type="text"
-                  placeholder="Software/Tool"
-                  value={entry.tool}
-                  onChange={(e) =>
-                    setSoftware(
-                      software.map((item, i) => (i === index ? { ...item, tool: e.target.value } : item))
-                    )
-                  }
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
-                />
-                <select
-                  value={entry.proficiency}
-                  onChange={(e) =>
-                    setSoftware(
-                      software.map((item, i) => (i === index ? { ...item, proficiency: e.target.value } : item))
-                    )
-                  }
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
-                >
-                  <option value="" disabled>
-                    Proficiency Level
-                  </option>
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-                <button
-                  onClick={() => handleRemoveSoftware(index)}
-                  className="text-red-500 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button onClick={handleAddSoftware} className="text-blue-600 hover:underline">
-              + Add Software/Tool
-            </button>
-          </div>
-        );
-      case 3: // Additional Information
-        return (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
-            {additionalInfo.certifications.map((cert, index) => (
-              <div key={index} className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Certification"
-                  value={cert.name}
-                  onChange={(e) =>
-                    setAdditionalInfo({
-                      ...additionalInfo,
-                      certifications: additionalInfo.certifications.map((item, i) =>
-                        i === index ? { ...item, name: e.target.value } : item
-                      ),
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Organization"
-                  value={cert.organization}
-                  onChange={(e) =>
-                    setAdditionalInfo({
-                      ...additionalInfo,
-                      certifications: additionalInfo.certifications.map((item, i) =>
-                        i === index ? { ...item, organization: e.target.value } : item
-                      ),
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Issue Date"
-                  value={cert.issueDate}
-                  onChange={(e) =>
-                    setAdditionalInfo({
-                      ...additionalInfo,
-                      certifications: additionalInfo.certifications.map((item, i) =>
-                        i === index ? { ...item, issueDate: e.target.value } : item
-                      ),
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Expiration Date"
-                  value={cert.expirationDate}
-                  onChange={(e) =>
-                    setAdditionalInfo({
-                      ...additionalInfo,
-                      certifications: additionalInfo.certifications.map((item, i) =>
-                        i === index ? { ...item, expirationDate: e.target.value } : item
-                      ),
-                    })
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                />
-                <button
-                  onClick={() => handleRemoveCertification(index)}
-                  className="text-red-500 hover:underline mt-2"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button onClick={handleAddCertification} className="text-blue-600 hover:underline mb-4">
-              + Add Certification
-            </button>
-            <h2 className="text-xl font-semibold mb-4">Open to Relocation?</h2>
-            <div className="flex items-center gap-4">
-              <label>
-                <input
-                  type="radio"
-                  name="relocation"
-                  value="Yes"
-                  checked={additionalInfo.willingToRelocate === "Yes"}
-                  onChange={(e) =>
-                    setAdditionalInfo({ ...additionalInfo, willingToRelocate: e.target.value })
-                  }
-                  className="mr-2"
-                />
-                Yes
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="relocation"
-                  value="No"
-                  checked={additionalInfo.willingToRelocate === "No"}
-                  onChange={(e) =>
-                    setAdditionalInfo({ ...additionalInfo, willingToRelocate: e.target.value })
-                  }
-                  className="mr-2"
-                />
-                No
-              </label>
-            </div>
-            <h2 className="text-xl font-semibold mb-4 mt-6">Relevant Links</h2>
-            <textarea
-              placeholder="Enter any relevant links (e.g., portfolio, LinkedIn)"
-              value={additionalInfo.links}
-              onChange={(e) =>
-                setAdditionalInfo({ ...additionalInfo, links: e.target.value })
-              }
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-        );
+      case 1:
+        return <JobPreferencesForm jobPreferences={jobPreferences} setJobPreferences={setJobPreferences} />;
+      case 2:
+        return <SkillsAndSoftwareForm skills={skills} setSkills={setSkills} software={software} setSoftware={setSoftware} handleAddSoftware={handleAddSoftware} handleRemoveSoftware={handleRemoveSoftware} />;
+      case 3:
+        return <AdditionalInfoForm additionalInfo={additionalInfo} setAdditionalInfo={setAdditionalInfo} handleAddCertification={handleAddCertification} handleRemoveCertification={handleRemoveCertification} />;
       default:
         return null;
     }
@@ -664,58 +999,208 @@ const JobSearch = () => {
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6">
       {/* Left Panel: Steps Navigation */}
-      <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Tell Us About Your Dream Job</h2>
-        <ul className="space-y-4">
-          <li
-            className={`cursor-pointer ${
-              activeStep === 1 ? "text-blue-600 font-bold" : "text-gray-600"
-            }`}
-            onClick={() => setActiveStep(1)}
-          >
-            1. Job Preferences
-          </li>
-          <li
-            className={`cursor-pointer ${
-              activeStep === 2 ? "text-blue-600 font-bold" : "text-gray-600"
-            }`}
-            onClick={() => setActiveStep(2)}
-          >
-            2. Skills
-          </li>
-          <li
-            className={`cursor-pointer ${
-              activeStep === 3 ? "text-blue-600 font-bold" : "text-gray-600"
-            }`}
-            onClick={() => setActiveStep(3)}
-          >
-            3. Additional Information
-          </li>
-        </ul>
-      </div>
+      {panesVisible && (
+        <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4">Tell Us About Your Dream Job</h2>
+          <ul className="space-y-4">
+            <li
+              className={`cursor-pointer ${activeStep === 1 ? "text-blue-600 font-bold" : "text-gray-600"
+                }`}
+              onClick={() => setActiveStep(1)}
+            >
+              1. Job Preferences
+            </li>
+            <li
+              className={`cursor-pointer ${activeStep === 2 ? "text-blue-600 font-bold" : "text-gray-600"
+                }`}
+              onClick={() => setActiveStep(2)}
+            >
+              2. Skills
+            </li>
+            <li
+              className={`cursor-pointer ${activeStep === 3 ? "text-blue-600 font-bold" : "text-gray-600"
+                }`}
+              onClick={() => setActiveStep(3)}
+            >
+              3. Additional Information
+            </li>
+          </ul>
+
+        </div>
+      )}
 
       {/* Right Panel: Form Content */}
-      <div className="flex-1 bg-white rounded-lg shadow-md p-6">
-        {renderForm()}
-        <div className="mt-6 flex justify-between">
-          {activeStep > 1 && (
-            <button
-              onClick={handlePrevious}
-              className="bg-gray-300 text-black px-4 py-2 rounded-lg"
-            >
-              Previous
-            </button>
-          )}
-          <button
-            onClick={handleNext}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-          >
-            {activeStep < 3 ? "Next" : "Submit"}
-          </button>
+      {panesVisible && (
+        <div className="w-full md:w-2/3 bg-white rounded-lg shadow-md p-6">
+          {activeStep !== 4 && renderForm()}
+          {/* Submit Button */}
+          <div className="mt-4 flex justify-end gap-4">
+            {activeStep > 1 && (
+              <button
+                onClick={() => setActiveStep(activeStep - 1)}
+                className="px-6 py-2 bg-gray-300 text-white rounded-md"
+              >
+                Back
+              </button>
+            )}
+            {activeStep < 3 ? (
+              <button
+                onClick={() => setActiveStep(activeStep + 1)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit} // Call the handleSubmit function
+                className="px-6 py-2 bg-green-600 text-white rounded-md"
+              >
+                Submit
+              </button>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Display submitted search fields and values */}
+      {activeStep === 4 && (
+  <div className="w-full bg-white rounded-lg shadow-md p-6">
+    <h3 className="text-xl font-semibold">Your Search Criteria</h3>
+
+    {/* Job Title */}
+    {jobPreferences.jobTitle?.length > 0 && (
+      <div className="my-4">
+        <p><strong>Job Title: </strong> {jobPreferences.jobTitle}</p>
       </div>
+    )}
+
+    {/* Industry */}
+    {jobPreferences.industry?.length > 0 && (
+      <div className="my-4">
+        <p><strong>Industry: </strong> {jobPreferences.industry}</p>
+      </div>
+    )}
+
+    {/* Employment Type */}
+    {jobPreferences.employmentType?.length > 0 && (
+      <div className="my-4">
+        <p><strong>Employment Type: </strong> {jobPreferences.employmentType}</p>
+      </div>
+    )}
+
+    {/* Location */}
+    {jobPreferences.location.length > 0 && (
+      <div className="my-4">
+        <p><strong>Location: </strong> {jobPreferences.location}</p>
+      </div>
+    )}
+
+    {/* Salary Range */}
+    {(jobPreferences.salaryExpectation.min || jobPreferences.salaryExpectation.max) && (
+      <div className="my-4">
+        <p><strong>Salary Range: </strong>
+          {jobPreferences.salaryExpectation.min
+            ? `$${jobPreferences.salaryExpectation.min.toLocaleString()}`
+            : "Min Not Selected"}{" "}
+          -{" "}
+          {jobPreferences.salaryExpectation.max
+            ? `$${jobPreferences.salaryExpectation.max.toLocaleString()}`
+            : "Max Not Selected"}
+        </p>
+      </div>
+    )}
+
+    {/* Skills */}
+    {skills.length > 0 && (
+      <div className="my-4">
+        <strong>Skills: </strong>
+        {skills.map((skill, index) => (
+          <span key={index}>
+            {skill}{index < skills.length - 1 && ', '}&nbsp;
+          </span>
+        ))}
+      </div>
+    )}
+
+    {/* Software */}
+    {software.filter(s => s.tool && s.proficiency).length > 0 && (
+      <div className="my-4">
+        <p><strong>Software: </strong>
+        {software.filter(s => s.tool && s.proficiency).map((s, idx) => (
+            <span key={idx}>{`${s.tool} (${s.proficiency})`}</span>
+          ))}
+        </p>
+      </div>
+    )}
+
+    {/* Certifications */}
+    {additionalInfo.certifications?.filter(cert => cert.name && cert.organization).length > 0 && (
+      <div className="my-4">
+        <p><strong>Certifications: </strong>
+        {additionalInfo.certifications?.filter(cert => cert.name && cert.organization).map((cert, idx) => (
+            <span key={idx}>{`${cert.name} - ${cert.organization}`}</span>
+          ))}
+        </p>
+      </div>
+    )}
+
+    {/* Willing to Relocate */}
+    {additionalInfo.willingToRelocate?.length > 0 &&  (
+      <div className="my-4">
+        <p><strong>Willing to Relocate: </strong> {additionalInfo.willingToRelocate}</p>
+      </div>
+    )}
+
+    {/* Links */}
+    {additionalInfo.links?.length > 0 && (
+      <div className="my-4">
+        <p><strong>Links: </strong> {additionalInfo.links}</p>
+      </div>
+    )}
+
+    {/* Reset Filters Button */}
+    <div className="my-4">
+      <button
+        onClick={resetFilters}
+        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+      >
+        Reset Filters
+      </button>
+    </div>
+  </div>
+)}
+
+
+      {/* Display filtered jobs */}
+      {!panesVisible && filteredJobs && Array.isArray(filteredJobs) && filteredJobs.length > 0 ? (
+        <div className="w-full bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-semibold">Filtered Jobs</h3>
+          <ul className="list-disc mt-4">
+            {filteredJobs.map((job, index) => (
+              <li key={index} className="py-3">
+                <div>
+                  {/* Accessing label or value for each property */}
+                  <strong>{job.title?.label || job.title || ''}</strong> - {job.company.label || job.company || ''}<br />
+                  {job.description?.label || job.description || ''}<br />
+                  <p><strong>Location: </strong>{job.location?.label || job.location || ''}<br />
+                    <strong>Salary: </strong>{job.salary?.value || job.salary || ''}</p>
+                </div>
+              </li>
+
+            ))}
+          </ul>
+        </div>
+      ) : (
+        !panesVisible && (
+          <div className="w-full bg-white rounded-lg shadow-md p-6">
+            <p className="text-xl font-semibold text-gray-600">No jobs found</p>
+          </div>
+        )
+      )}
+
+
     </div>
   );
-};
 
+}
 export default JobSearch;

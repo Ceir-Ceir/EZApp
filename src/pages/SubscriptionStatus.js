@@ -60,7 +60,7 @@ export default function SubscriptionStatus() {
             }
 
             const userEmail = currentUser.email; // Use the user's email
-            const userRef = doc(db, 'Users', userEmail); // Reference to the user's document using email as ID
+            const userRef = doc(db, "Users", currentUser.uid);
             await updateDoc(userRef, {
                 subscriptionStatus: status, // Update subscription status
                 subscriptionUpdatedAt: new Date(), // Add a timestamp for the update
