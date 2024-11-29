@@ -25,12 +25,15 @@ function App() {
           {/* Subscription Routes */}
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/subscription-flow" element={<SubscriptionFlow />} />
+          <Route path="/main-app-forms" element={<MainAppForm />} />
+          <Route path="/subscription-status" element={<SubscriptionStatus />} />
 
           {/* Main App with Nested Routes */}
           <Route path="/main-app" element={<MainApp />}>
             <Route index element={<MainAppForm />} />
             <Route path="dashboard" element={<DashboardView />} />
             <Route path="job-search" element={<JobSearch />} />
+           
           </Route>
         </Routes>
       </Router>

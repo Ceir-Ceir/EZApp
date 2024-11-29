@@ -73,10 +73,15 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
           try {
+
+            console.log("Setting up onAuthStateChanged listener...");
             if (user) {
+                
+                console.log("User data:", user.uid); 
               const subscriptionStatus = await getUserSubscriptionStatus(user.uid);
               setCurrentUser({ ...user, subscriptionStatus });
             } else {
+            console.log("No user is signed in.");
               setCurrentUser(null);
             }
           } catch (error) {

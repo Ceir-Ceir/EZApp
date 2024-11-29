@@ -2,9 +2,19 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Home, LayoutDashboard, Search, LogOut } from 'lucide-react';
-
+import { getAuth } from 'firebase/auth';
 const MainApp = () => {
   const navigate = useNavigate();
+  const auth = getAuth();
+  const handleLogout = () => {
+    auth.signOut().then(() => {
+      console.log('Logged out successfully');
+      navigate("/login");
+      // Redirect or show login page
+    }).catch((error) => {
+      console.error('Logout Error:', error);
+    });
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -21,6 +31,7 @@ const MainApp = () => {
           <span className="mr-4 text-gray-600">Eng (US)</span>
           <span className="mr-4 text-gray-800 font-medium">Musfiq</span>
           <LogOut
+          onClick={handleLogout}
             className="cursor-pointer text-gray-600 hover:text-red-600 transition duration-200"
             size={20}
           />

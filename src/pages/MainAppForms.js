@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../services/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
+import { doc, setDoc, getDoc, getFirestore } from 'firebase/firestore';
 
 // Step Component
 const Step = ({ number, label, isActive, onClick }) => (
@@ -9,7 +9,7 @@ const Step = ({ number, label, isActive, onClick }) => (
     className={`flex items-center gap-4 cursor-pointer ${
       isActive ? 'text-blue-600 font-bold' : 'text-gray-600'
     }`}
-    onClick={onClick} // Ensure onClick is here
+    onClick={onClick}
   >
     <div
       className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
@@ -25,36 +25,80 @@ const Step = ({ number, label, isActive, onClick }) => (
 );
 
 const MainAppForms = () => {
+  const { currentUser } = useAuth(); // Ensure `useAuth` is used at the top level
   const [activeStep, setActiveStep] = useState(1);
   const [userData, setUserData] = useState({});
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+  const fetchUserData = async () => {
+    try {
+      const db = getFirestore();
+      const docRef = doc(db, 'Users', currentUser.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        console.log("Fetched Data:", docSnap.data());
+        setUserData(docSnap.data()); // Set the fetched data, including email
+      } else {
+        console.log('No such document!');
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      navigate('/login');
+    }
+  };
+
+  fetchUserData();
+}, [currentUser, navigate]);
+
+
   const handleNext = (stepData) => {
+    // Merge workExperience data into userData
+    console.log('Step Data:', stepData); // Log step data to verify
     setUserData((prev) => ({ ...prev, ...stepData }));
+  
     if (activeStep === 4) {
-      saveToFirestore();
+      console.log('Final User Data before save:', { ...userData, ...stepData }); // Check if workExperience is included
+      saveToFirestore({ ...userData, ...stepData }); // Pass the complete data including workExperience
     } else {
       setActiveStep(activeStep + 1);
     }
   };
+  
 
   const handleStepClick = (step) => {
     setActiveStep(step);
   };
-  
-  
 
-  const saveToFirestore = async () => {
+  const saveToFirestore = async (finalData) => {
     try {
-      const docRef = doc(db, 'Users', userData.email); // Document ID is the email
-      await setDoc(docRef, userData);
-      alert('Data saved successfully!');
-      navigate('/dashboard');
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
+        // Add the profileComplete field to finalData
+    const updatedData = { ...finalData, profileComplete: true };
+  
+      const db = getFirestore();
+      console.log('Saving data to Firestore:', updatedData);
+  
+      const docRef = doc(db, 'Users', currentUser.uid); // Save under user's UID
+      await setDoc(docRef, updatedData, { merge: true }); // Merge the new data with existing data
+      console.log('Data saved successfully!');
+      navigate('/main-app/dashboard');
     } catch (error) {
       console.error('Error saving data:', error);
       alert('Error saving data. Please try again.');
     }
   };
+  
+
 
   const renderForm = () => {
     switch (activeStep) {
@@ -135,11 +179,21 @@ const MainAppForms = () => {
 /* Personal Information Form */
 const PersonalInformationForm = ({ onNext, prefillData }) => {
   const [formData, setFormData] = useState({
-    fullName: prefillData?.fullName || '',
-    email: prefillData?.email || '',
-    phone: prefillData?.phone || '',
-    linkedIn: prefillData?.linkedIn || '',
+    fullName: '',
+    email: '',
+    phone: '',
+    linkedIn: '',
   });
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      fullName: prefillData?.fullName || '',
+      email: prefillData?.email || '',
+      phone: prefillData?.phone || '',
+      linkedIn: prefillData?.linkedIn || '',
+    }));
+  }, [prefillData]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -175,6 +229,7 @@ const PersonalInformationForm = ({ onNext, prefillData }) => {
             placeholder="Enter your email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
+            disabled
           />
         </div>
         <div>
@@ -580,6 +635,7 @@ const WorkExperienceForm = ({ onNext }) => {
   };
 
   const handleSubmit = () => {
+    console.log('Work Experience Data:', experienceEntries);
     onNext({ workExperience: experienceEntries });
   };
 

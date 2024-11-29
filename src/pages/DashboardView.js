@@ -1,50 +1,102 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import { getDoc, updateDoc, doc } from 'firebase/firestore';
+import { db } from '../services/firebase'; // Firebase configuration
+import { CSVLink } from 'react-csv'; // CSV Export
+import * as XLSX from 'xlsx'; // Excel Export
+import { getAuth } from 'firebase/auth';
+import { useAuth } from '../context/AuthContext';
+import { checkSubscriptionStatus } from '../services/stripe';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileExcel } from '@fortawesome/free-solid-svg-icons';
 
 const DashboardView = () => {
-  // Placeholder data for now; to be replaced with dynamic data from Firebase
-  const [userData, setUserData] = useState({
-    name: "Nicole Richardson",
-    email: "nicolerichardson444@gmail.com",
-    phone: "03428765431",
-    location: "Virginia Beach, United States",
-    linkedIn: "https://www.linkedin.com/in/nicole-richardson",
-    skills: [
-      "Creativity",
-      "Sales",
-      "Adaptability",
-      "Project Management",
-      "Marketing Strategy",
-    ],
-    experiences: [
-      {
-        title: "UI/UX Designer",
-        company: "Amazon",
-        startDate: "Dec 2022",
-        endDate: "Dec 2023",
-      },
-      {
-        title: "UI/UX Designer",
-        company: "Amazon",
-        startDate: "Jan 2024",
-        endDate: "Present",
-      },
-    ],
-    education: [
-      {
-        school: "The John Cooper School",
-        years: "2021-2023",
-      },
-      {
-        school: "Duke University",
-        years: "2024-Present",
-      },
-    ],
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [userData, setUserData] = useState({});
 
-  // Edit state for each section
   const [isEditingSkills, setIsEditingSkills] = useState(false);
   const [isEditingExperiences, setIsEditingExperiences] = useState(false);
   const [isEditingEducation, setIsEditingEducation] = useState(false);
+
+  const auth = getAuth();
+  const userId = auth.currentUser?.uid;
+  console.log("userID", userId);
+  const userEmail = auth.currentUser?.email;
+  console.log("userEmail", userEmail);
+  const { currentUser } = useAuth();
+  // Fetch data from DB
+  const fetchData = async () => {
+    try {
+      const userRef = doc(db, "Users", currentUser.uid); // Firestore document reference
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        navigate('/main-app-forms');
+      }
+
+      setUserData(userSnap.data());
+      const data = userSnap.data();
+      setUserData({
+        ...data,
+        skills: data.skills || [],
+        experiences: data.workExperience || [],
+        education: data.education || [],
+      });
+
+      const status = await checkSubscriptionStatus(userId);
+      setSubscriptionStatus(status);  // Set the status in state
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Save the Data to DB
+  const saveData = async () => {
+    try {
+      if (!userId) return;
+
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, {
+        skills: userData.skills,
+        workExperience: userData.experiences,
+        education: userData.education,
+      }, { merge: true });
+      alert("Data saved successfully!");
+    } catch (err) {
+      console.error("Error saving data:", err);
+      alert("Failed to save data.");
+    }
+  };
+
+  useEffect(() => {
+    // Check if user is authenticated
+    if (!currentUser) {
+      navigate('/login'); // Redirect to login if user is not authenticated
+      return;
+    }
+
+    if (userId) fetchData();
+  }, [userId]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+
+  if (!userData) {
+    return <div>No user data available</div>;
+  }
+
+  // Export to Excel
+  const handleExcelExport = () => {
+    const ws = XLSX.utils.json_to_sheet([userData]); // Convert userData to a sheet
+    const wb = XLSX.utils.book_new(); // Create a new workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'User Data'); // Append the sheet to the workbook
+    XLSX.writeFile(wb, 'user_data.xlsx'); // Download as an Excel file
+  };
 
   // Skills Editing Handlers
   const handleSkillChange = (index, value) => {
@@ -64,6 +116,7 @@ const DashboardView = () => {
 
   // Experience Editing Handlers
   const handleExperienceChange = (index, field, value) => {
+    console.log(`Changing experience[${index}].${field} to ${value}`); // Debug log
     const updatedExperiences = [...userData.experiences];
     updatedExperiences[index][field] = value;
     setUserData({ ...userData, experiences: updatedExperiences });
@@ -74,7 +127,7 @@ const DashboardView = () => {
       ...userData,
       experiences: [
         ...userData.experiences,
-        { title: "", company: "", startDate: "", endDate: "" },
+        { position: "", company: "", startDate: "", endDate: "" },
       ],
     });
   };
@@ -94,7 +147,9 @@ const DashboardView = () => {
   const handleAddEducation = () => {
     setUserData({
       ...userData,
-      education: [...userData.education, { school: "", years: "" }],
+      education: [...userData.education,
+      { degree: "", school: "", startDate: "", endDate: "" }
+      ],
     });
   };
 
@@ -105,13 +160,21 @@ const DashboardView = () => {
 
   return (
     <div className="p-8">
+      {/* Export to Excel Button */}
+      <button
+        className="ml-auto flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+        onClick={handleExcelExport}
+      >
+        <FontAwesomeIcon icon={faFileExcel} className="text-xl" />
+        &nbsp;Export
+      </button>
       {/* Header */}
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-2xl font-bold">{userData.name}'s Dashboard</h1>
+        <h1 className="text-2xl font-bold">{userData.fullName}'s Dashboard</h1>
         <div className="flex flex-wrap gap-4">
           <p className="text-gray-700">
             <span className="font-medium">Email: </span>
-            {userData.email}
+            {userEmail}
           </p>
           <p className="text-gray-700">
             <span className="font-medium">Phone: </span>
@@ -163,7 +226,10 @@ const DashboardView = () => {
             </button>
             <div>
               <button
-                onClick={() => setIsEditingSkills(false)}
+                onClick={() => {
+                  saveData(); // Save data when the user clicks "Save"
+                  setIsEditingSkills(false); // Exit edit mode
+                }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
               >
                 Save
@@ -190,9 +256,6 @@ const DashboardView = () => {
         )}
       </div>
 
-
-
-
       {/* Experience Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Experience</h2>
@@ -202,9 +265,9 @@ const DashboardView = () => {
               <div key={index} className="mb-4 border-b border-gray-200 pb-4">
                 <input
                   type="text"
-                  value={experience.title}
+                  value={experience.position}
                   onChange={(e) =>
-                    handleExperienceChange(index, "title", e.target.value)
+                    handleExperienceChange(index, "position", e.target.value)
                   }
                   placeholder="Job Title"
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
@@ -252,7 +315,10 @@ const DashboardView = () => {
             </button>
             <div>
               <button
-                onClick={() => setIsEditingExperiences(false)}
+                onClick={() => {
+                  saveData(); // Save data when the user clicks "Save"
+                  setIsEditingExperiences(false); // Exit edit mode
+                }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
               >
                 Save
@@ -271,7 +337,7 @@ const DashboardView = () => {
               {userData.experiences.map((experience, index) => (
                 <li key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-800">{experience.title}</h3>
+                    <h3 className="font-semibold text-gray-800">{experience.position}</h3>
                     <p className="text-gray-600">
                       {experience.company} | {experience.startDate} - {experience.endDate}
                     </p>
@@ -285,10 +351,9 @@ const DashboardView = () => {
                 </li>
               ))}
             </ul>
-            </div>
-          )}
-        </div>
-
+          </div>
+        )}
+      </div>
 
       {/* Education Section */}
       <div className="mb-8">
@@ -297,6 +362,15 @@ const DashboardView = () => {
           <div>
             {userData.education.map((edu, index) => (
               <div key={index} className="mb-4 border-b border-gray-200 pb-4">
+                <input
+                  type="text"
+                  value={edu.degree}
+                  onChange={(e) =>
+                    handleEducationChange(index, "degree", e.target.value)
+                  }
+                  placeholder="Degree"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
                 <input
                   type="text"
                   value={edu.school}
@@ -308,11 +382,20 @@ const DashboardView = () => {
                 />
                 <input
                   type="text"
-                  value={edu.years}
+                  value={edu.startDate}
                   onChange={(e) =>
-                    handleEducationChange(index, "years", e.target.value)
+                    handleEducationChange(index, "startDate", e.target.value)
                   }
-                  placeholder="Years"
+                  placeholder="Start Date"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={edu.endDate}
+                  onChange={(e) =>
+                    handleEducationChange(index, "endDate", e.target.value)
+                  }
+                  placeholder="End Date"
                   className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 />
                 <button
@@ -331,7 +414,10 @@ const DashboardView = () => {
             </button>
             <div>
               <button
-                onClick={() => setIsEditingEducation(false)}
+                onClick={() => {
+                  saveData(); // Save data when the user clicks "Save"
+                  setIsEditingEducation(false); // Exit edit mode
+                }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
               >
                 Save
@@ -350,22 +436,23 @@ const DashboardView = () => {
               {userData.education.map((edu, index) => (
                 <li key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
                   <div>
-                    <h3 className="font-semibold text-gray-800">{edu.school}</h3>
-                    <p className="text-gray-600">{edu.years}</p>
+                    <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
+                    <p className="text-gray-600">
+                      {edu.school} | {edu.startDate} - {edu.endDate}
+                    </p>
                   </div>
                   <button
                     onClick={() => setIsEditingEducation(true)}
                     className="text-gray-600 hover:text-gray-800 text-sm font-medium"
                   >
                     Edit
-                    </button>
+                  </button>
                 </li>
               ))}
             </ul>
-            </div>
-          )}
-        </div>
-
+          </div>
+        )}
+      </div>
 
       {/* Social Links Section */}
       <div>
