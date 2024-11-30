@@ -99,11 +99,18 @@ const Subscribe = () => {
         // Redirect if already subscribed
         useEffect(() => {
             if (subscriptionStatus === 'active' && profileComplete === true) {
-              navigate('/main-app/dashboard');
+                navigate('/main-app/dashboard');
             } else if (subscriptionStatus === 'active' && profileComplete !== true) {
-              navigate('/main-app-forms');
+                navigate('/main-app-forms');
             }
-          }, [subscriptionStatus, profileComplete, navigate]);
+        }, [subscriptionStatus, profileComplete, navigate]);
+        
+        useEffect(() => {
+            if (currentUser) {
+                fetchSubscriptionStatus();
+            }
+        }, [currentUser]);
+        
           
 
     return (

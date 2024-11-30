@@ -1,4 +1,3 @@
-// src/pages/subscriptionStatus.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -24,21 +23,21 @@ export default function SubscriptionStatus() {
                 const query = new URLSearchParams(location.search);
                 const status = query.get('status');
 
-                switch (status) {
-                    case 'success':
-                        await updateSubscriptionStatus('active');
-                        navigate('/main-app-forms'); 
-                        break;
+                if (!status) {
+                    alert('Missing subscription status. Redirecting to subscription page.');
+                    navigate('/subscribe');
+                    return;
+                }
 
-                    case 'cancelled':
-                        alert('Subscription cancelled. You can try again.');
-                        navigate('/subscribe');
-                        break;
-
-                    default:
-                        alert('Subscription validation failed. Please contact support.');
-                        navigate('/subscribe');
-                        break;
+                if (status === 'success') {
+                    await updateSubscriptionStatus('active');
+                    navigate('/main-app-forms'); // Navigate to the main app
+                } else if (status === 'cancelled') {
+                    alert('Subscription cancelled. You can try again.');
+                    navigate('/subscribe');
+                } else {
+                    alert('Invalid subscription status. Please contact support.');
+                    navigate('/subscribe');
                 }
             } catch (error) {
                 console.error('Error validating subscription:', error);
@@ -59,11 +58,10 @@ export default function SubscriptionStatus() {
                 return;
             }
 
-            const userEmail = currentUser.email; // Use the user's email
             const userRef = doc(db, "Users", currentUser.uid);
             await updateDoc(userRef, {
-                subscriptionStatus: status, // Update subscription status
-                subscriptionUpdatedAt: new Date(), // Add a timestamp for the update
+                subscriptionStatus: status,
+                subscriptionUpdatedAt: new Date().toISOString(), // ISO timestamp for consistency
             });
             console.log('Subscription status updated to:', status);
         } catch (error) {
@@ -71,5 +69,9 @@ export default function SubscriptionStatus() {
         }
     };
 
-  
+    if (loading) {
+        return <div>Loading...</div>; // Simple loader component
+    }
+
+    return null; // Render nothing once the validation is done
 }
