@@ -1,6 +1,7 @@
 // src/pages/LandingPage
 import React, { useEffect, useState } from 'react'; // Add useState import
 import { Link } from 'react-router-dom';
+import { PencilIcon, AdjustmentsHorizontalIcon, ArrowPathIcon, BriefcaseIcon } from "@heroicons/react/24/outline"; // Example icons
 
 const LandingPage = () => {
     // Add state at component level, not inside useEffect
@@ -150,6 +151,43 @@ const LandingPage = () => {
                 </div>
             </div>
 
+                    {/* How It Works Section */}
+                    <section id="how-it-works" className="bg-gray-100 py-12">
+                        <div className="max-w-7xl mx-auto px-6">
+                        <h2 className="text-3xl font-bold text-center mb-8">How It Works</h2>
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex flex-col items-center text-center bg-white p-6 rounded-lg shadow-md w-full md:w-1/4">
+                            <PencilIcon className="h-12 w-12 text-blue-600 mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Step 1: Fill Out Your Info</h3>
+                            <p className="text-gray-600">
+                                Provide the same details you'd normally include on a job application.
+                            </p>
+                            </div>
+                            <div className="flex flex-col items-center text-center bg-white p-6 rounded-lg shadow-md w-full md:w-1/4">
+                            <AdjustmentsHorizontalIcon className="h-12 w-12 text-green-600 mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Step 2: Choose Preferences</h3>
+                            <p className="text-gray-600">
+                                Select your desired job title, location, salary, and other preferences.
+                            </p>
+                            </div>
+                            <div className="flex flex-col items-center text-center bg-white p-6 rounded-lg shadow-md w-full md:w-1/4">
+                            <ArrowPathIcon className="h-12 w-12 text-yellow-600 mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Step 3: Start Your Search</h3>
+                            <p className="text-gray-600">
+                                We find jobs daily, tailor your resume, and apply for you automatically.
+                            </p>
+                            </div>
+                            <div className="flex flex-col items-center text-center bg-white p-6 rounded-lg shadow-md w-full md:w-1/4">
+                            <BriefcaseIcon className="h-12 w-12 text-purple-600 mb-4" />
+                            <h3 className="text-xl font-semibold mb-2">Step 4: Get Hired</h3>
+                            <p className="text-gray-600">
+                                Prepare for interviews or update your job search details anytime.
+                            </p>
+                            </div>
+                        </div>
+                        </div>
+                    </section>
+
             {/* Features Section */}
             <div id="features" className="w-full py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-4">
@@ -168,9 +206,10 @@ const LandingPage = () => {
                         {/* AI Job Search */}
                         <div className="flex flex-col items-center text-center bg-[#f8f9fa] rounded-3xl p-8">
                             <div className="w-[72px] h-[72px] bg-[#004aad] rounded-3xl flex items-center justify-center mb-6">
-                                <div className="w-[45px] h-[45px]">
-                                    <img className="w-full h-full" src="/images/intelligence.png" alt="AI Icon" />
-                                </div>
+                            <div className="w-[72px] h-[72px] bg-gradient-to-r from-blue-500 to-blue-300 rounded-full flex items-center justify-center mb-6">
+                                <img className="w-[45px] h-[45px]" src="/images/intelligence.png" alt="AI Icon" />
+                            </div>
+
                             </div>
                             <h3 className="text-black text-2xl font-medium font-['SF Pro Display'] mb-4">
                                 AI Job Search
@@ -183,8 +222,8 @@ const LandingPage = () => {
                         {/* AI Resumes & Cover Letters */}
                         <div className="flex flex-col items-center text-center bg-[#f8f9fa] rounded-3xl p-8">
                             <div className="w-[72px] h-[72px] bg-[#004aad] rounded-3xl flex items-center justify-center mb-6">
-                                <div className="w-[45px] h-[45px]">
-                                    <img className="w-full h-full" src="/images/human-resources.png" alt="Tracking Icon" />
+                                <div className="w-[72px] h-[72px] bg-gradient-to-r from-blue-500 to-blue-300 rounded-full flex items-center justify-center mb-6">
+                                    <img className="w-[45px] h-[45px]" src="/images/human-resources.png" alt="AI Icon" />
                                 </div>
                             </div>
                             <h3 className="text-black text-2xl font-medium font-['SF Pro Display'] mb-4">
@@ -198,9 +237,9 @@ const LandingPage = () => {
                         {/* Smart Search System */}
                         <div className="flex flex-col items-center text-center bg-[#f8f9fa] rounded-3xl p-8">
                             <div className="w-[72px] h-[72px] bg-[#004aad] rounded-3xl flex items-center justify-center mb-6">
-                                <div className="w-[45px] h-[45px]">
-                                    <img className="w-full h-full" src="/images/feedback.png" alt="Interview Icon" />
-                                </div>
+                                <div className="w-[72px] h-[72px] bg-gradient-to-r from-blue-500 to-blue-300 rounded-full flex items-center justify-center mb-6">
+                                <img className="w-[45px] h-[45px]" src="/images/feedback.png" alt="AI Icon" />
+                            </div>
                             </div>
                             <h3 className="text-black text-2xl font-medium font-['SF Pro Display'] mb-4">
                                 Smart Search System
@@ -288,20 +327,27 @@ const LandingPage = () => {
             </div>
 
             {/* Pricing Section */}
-            <div id="pricing" className="w-full py-24 px-4">
-                <div className="max-w-7xl mx-auto">
-                    <div
-                        dangerouslySetInnerHTML={{
-                            __html: `
-                                <stripe-pricing-table 
-                                    pricing-table-id="prctbl_1QKsvxK15hFjPN4iIj6XoBYS"
-                                    publishable-key="pk_test_51QJhxLK15hFjPN4iALvmbUuaKxuNE3pthjbKBxNmKO5nrOxXNxgDs5KPxPSrCebcRL59697NZppmi2RTprQCibl000uyb5mhWP">
-                                </stripe-pricing-table>
-                            `
-                        }}
-                    />
-                </div>
+            <div id="pricing" className="w-full py-24 px-4 bg-gray-50">
+            <div className="max-w-7xl mx-auto text-center mb-12">
+                <h2 className="text-4xl font-bold text-gray-900 mb-4">Find the Perfect Plan for You</h2>
+                <p className="text-gray-600 text-lg">
+                Wherever you are in your job search, we have a plan that suits your needs.
+                </p>
             </div>
+            <div className="max-w-7xl mx-auto">
+                <div
+                dangerouslySetInnerHTML={{
+                    __html: `
+                    <stripe-pricing-table 
+                        pricing-table-id="prctbl_1QKsvxK15hFjPN4iIj6XoBYS"
+                        publishable-key="pk_test_51QJhxLK15hFjPN4iALvmbUuaKxuNE3pthjbKBxNmKO5nrOxXNxgDs5KPxPSrCebcRL59697NZppmi2RTprQCibl000uyb5mhWP">
+                    </stripe-pricing-table>
+                    `,
+                }}
+                />
+            </div>
+            </div>
+
 
             {/* Footer */}
             <footer className="w-full bg-gray-50 px-8 py-6 border-t border-gray-200">

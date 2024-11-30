@@ -40,7 +40,7 @@ const Signup = () => {
             const user = userCredential.user;
 
             // Save user data to Firestore
-            await setDoc(doc(db, 'users', user.uid), {
+            await setDoc(doc(db, 'Users', user.uid), {
                 email: user.email,
                 createdAt: new Date(),
                 subscriptionStatus: 'free',
@@ -67,7 +67,7 @@ const Signup = () => {
             const user = result.user;
 
             // Save or update user data in Firestore
-            await setDoc(doc(db, 'users', user.uid), {
+            await setDoc(doc(db, 'Users', user.uid), {
                 email: user.email,
                 createdAt: new Date(),
                 subscriptionStatus: 'free',

@@ -1,169 +1,470 @@
-import { useEffect, useState } from 'react';
-import { getDoc, doc } from 'firebase/firestore';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
+import { getDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase'; // Firebase configuration
 import { CSVLink } from 'react-csv'; // CSV Export
 import * as XLSX from 'xlsx'; // Excel Export
 import { getAuth } from 'firebase/auth';
-import { checkSubscriptionStatus } from '../services/stripe'; 
+import { useAuth } from '../context/AuthContext';
+import { checkSubscriptionStatus } from '../services/stripe';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileExcel } from '@fortawesome/free-solid-svg-icons';
 
 const DashboardView = () => {
-  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [userData, setUserData] = useState({});
+
+  const [isEditingSkills, setIsEditingSkills] = useState(false);
+  const [isEditingExperiences, setIsEditingExperiences] = useState(false);
+  const [isEditingEducation, setIsEditingEducation] = useState(false);
 
   const auth = getAuth();
-  const userId = auth.currentUser?.uid; // Get the authenticated user's ID
+  const userId = auth.currentUser?.uid;
+  console.log("userID", userId);
   const userEmail = auth.currentUser?.email;
-  // Fetch user data from Firestore and subscription status
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch user data
-        const userRef = doc(db, 'Users', userEmail);
-        const userSnap = await getDoc(userRef);
+  console.log("userEmail", userEmail);
+  const { currentUser } = useAuth();
+  // Fetch data from DB
+  const fetchData = async () => {
+    try {
+      const userRef = doc(db, "Users", currentUser.uid); // Firestore document reference
+      const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-          setError('User data not found');
-          return;
-        }
-
-        setUserData(userSnap.data());
-
-        // Fetch subscription status
-        const status = await checkSubscriptionStatus(userId);
-        setSubscriptionStatus(status);  // Set the status in state
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('Error fetching data');
-      } finally {
-        setLoading(false);  // Stop loading once data is fetched
+      if (!userSnap.exists()) {
+        navigate('/main-app-forms');
       }
-    };
 
-    if (userId) {
-      fetchData();  // Call the function when component mounts
+      setUserData(userSnap.data());
+      const data = userSnap.data();
+      setUserData({
+        ...data,
+        skills: data.skills || [],
+        experiences: data.workExperience || [],
+        education: data.education || [],
+      });
+
+      const status = await checkSubscriptionStatus(userId);
+      setSubscriptionStatus(status);  // Set the status in state
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
     }
+  };
+  // Save the Data to DB
+  const saveData = async () => {
+    try {
+      if (!userId) return;
+
+      const userRef = doc(db, "Users", userId);
+      await updateDoc(userRef, {
+        skills: userData.skills,
+        workExperience: userData.experiences,
+        education: userData.education,
+      }, { merge: true });
+      alert("Data saved successfully!");
+    } catch (err) {
+      console.error("Error saving data:", err);
+      alert("Failed to save data.");
+    }
+  };
+
+  useEffect(() => {
+    // Check if user is authenticated
+    if (!currentUser) {
+      navigate('/login'); // Redirect to login if user is not authenticated
+      return;
+    }
+
+    if (userId) fetchData();
   }, [userId]);
 
-  // Handle loading state
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
-  // Handle error state
-  if (error) {
-    return <div>{error}</div>;
+  if (!userData) {
+    return <div>No user data available</div>;
   }
-
-  // Handle logout
-  const handleLogout = () => {
-    auth.signOut().then(() => {
-      console.log('Logged out successfully');
-      // Redirect or show login page
-    }).catch((error) => {
-      console.error('Logout Error:', error);
-    });
-  };
 
   // Export to Excel
   const handleExcelExport = () => {
-    const ws = XLSX.utils.json_to_sheet([userData]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'User Data');
-    XLSX.writeFile(wb, 'user_data.xlsx');
+    const ws = XLSX.utils.json_to_sheet([userData]); // Convert userData to a sheet
+    const wb = XLSX.utils.book_new(); // Create a new workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'User Data'); // Append the sheet to the workbook
+    XLSX.writeFile(wb, 'user_data.xlsx'); // Download as an Excel file
+  };
+
+  // Skills Editing Handlers
+  const handleSkillChange = (index, value) => {
+    const updatedSkills = [...userData.skills];
+    updatedSkills[index] = value;
+    setUserData({ ...userData, skills: updatedSkills });
+  };
+
+  const handleAddSkill = () => {
+    setUserData({ ...userData, skills: [...userData.skills, ""] });
+  };
+
+  const handleRemoveSkill = (index) => {
+    const updatedSkills = userData.skills.filter((_, i) => i !== index);
+    setUserData({ ...userData, skills: updatedSkills });
+  };
+
+  // Experience Editing Handlers
+  const handleExperienceChange = (index, field, value) => {
+    console.log(`Changing experience[${index}].${field} to ${value}`); // Debug log
+    const updatedExperiences = [...userData.experiences];
+    updatedExperiences[index][field] = value;
+    setUserData({ ...userData, experiences: updatedExperiences });
+  };
+
+  const handleAddExperience = () => {
+    setUserData({
+      ...userData,
+      experiences: [
+        ...userData.experiences,
+        { position: "", company: "", startDate: "", endDate: "" },
+      ],
+    });
+  };
+
+  const handleRemoveExperience = (index) => {
+    const updatedExperiences = userData.experiences.filter((_, i) => i !== index);
+    setUserData({ ...userData, experiences: updatedExperiences });
+  };
+
+  // Education Editing Handlers
+  const handleEducationChange = (index, field, value) => {
+    const updatedEducation = [...userData.education];
+    updatedEducation[index][field] = value;
+    setUserData({ ...userData, education: updatedEducation });
+  };
+
+  const handleAddEducation = () => {
+    setUserData({
+      ...userData,
+      education: [...userData.education,
+      { degree: "", school: "", startDate: "", endDate: "" }
+      ],
+    });
+  };
+
+  const handleRemoveEducation = (index) => {
+    const updatedEducation = userData.education.filter((_, i) => i !== index);
+    setUserData({ ...userData, education: updatedEducation });
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-semibold">User Dashboard</h1>
-          <button
-            onClick={handleLogout}
-            className="text-white bg-red-500 px-4 py-2 rounded-lg"
-          >
-            Logout
-          </button>
+    <div className="p-8">
+      {/* Export to Excel Button */}
+      <button
+        className="ml-auto flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+        onClick={handleExcelExport}
+      >
+        <FontAwesomeIcon icon={faFileExcel} className="text-xl" />
+        &nbsp;Export
+      </button>
+      {/* Header */}
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-2xl font-bold">{userData.fullName}'s Dashboard</h1>
+        <div className="flex flex-wrap gap-4">
+          <p className="text-gray-700">
+            <span className="font-medium">Email: </span>
+            {userEmail}
+          </p>
+          <p className="text-gray-700">
+            <span className="font-medium">Phone: </span>
+            {userData.phone}
+          </p>
+          <p className="text-gray-700">
+            <span className="font-medium">Location: </span>
+            {userData.location}
+          </p>
         </div>
+      </div>
 
-        {/* User Profile Information */}
-        <div className="space-y-6">
+      {/* Skills Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
+          <span>Skills</span>
+          {!isEditingSkills && (
+            <button
+              onClick={() => setIsEditingSkills(true)}
+              className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+            >
+              Edit
+            </button>
+          )}
+        </h2>
+        {isEditingSkills ? (
           <div>
-            <h2 className="text-xl font-semibold">Personal Information</h2>
-            <p><strong>Name:</strong> {userData.fullName}</p>
-            <p><strong>Email:</strong> {userData.email}</p>
-            <p><strong>Phone:</strong> {userData.phone}</p>
-            <p><strong>Linkedin:</strong> {userData.linkedIn}</p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold">Demographics</h2>
-            <p><strong>Are you over 18?:</strong> {userData.over18}</p>
-            <p><strong>Work Authorization:</strong> {userData.workAuth}</p>
-            <p><strong>Gender:</strong> {userData.gender}</p>
-            <p><strong>Sponsorship Needed?:</strong> {userData.sponsorship}</p>
-            <p><strong>Preferred Pronouns:</strong> {userData.pronouns}</p>
-            <p><strong>Disability Status:</strong> {userData.disability}</p>
-            <p><strong>Veteran Status:</strong> {userData.veteran}</p>
-            <p><strong>Race/Ethnicity:</strong> {userData.race}</p>
-            <p><strong>Are you Hispanic or Latino?:</strong> {userData.hispanic}</p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-semibold">Education</h2>
-            {userData.education?.map((entry, index) => (
-              <div key={index} className="space-y-2">
-                <p><strong>School/University:</strong> {entry.school}</p>
-                <p><strong>Degree:</strong> {entry.degree}</p>
-                <p><strong>Start Date:</strong> {entry.startDate}</p>
-                <p><strong>End Date:</strong> {entry.endDate}</p>
-                <p><strong>Description:</strong> {entry.description}</p>
+            {userData.skills.map((skill, index) => (
+              <div key={index} className="flex items-center gap-2 mb-2">
+                <input
+                  type="text"
+                  value={skill}
+                  onChange={(e) => handleSkillChange(index, e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                />
+                <button
+                  onClick={() => handleRemoveSkill(index)}
+                  className="text-red-500 hover:underline"
+                >
+                  Remove
+                </button>
               </div>
             ))}
+            <button
+              onClick={handleAddSkill}
+              className="text-blue-600 hover:underline mb-4"
+            >
+              + Add Skill
+            </button>
+            <div>
+              <button
+                onClick={() => {
+                  saveData(); // Save data when the user clicks "Save"
+                  setIsEditingSkills(false); // Exit edit mode
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setIsEditingSkills(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-
-          <div>
-            <h2 className="text-xl font-semibold">Work Experience</h2>
-            {userData.workExperience?.map((entry, index) => (
-              <div key={index} className="space-y-2">
-                <p><strong>Company:</strong> {entry.company}</p>
-                <p><strong>Position:</strong> {entry.position}</p>
-                <p><strong>Start Date:</strong> {entry.startDate}</p>
-                <p><strong>End Date:</strong> {entry.endDate}</p>
-                <p><strong>Responsibilities:</strong> {entry.responsibilities}</p>
-              </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {userData.skills.map((skill, index) => (
+              <span
+                key={index}
+                className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                {skill}
+              </span>
             ))}
-          </div>
-        </div>
-
-        {/* Export Buttons */}
-        <div className="flex space-x-4 mt-6">
-          <CSVLink
-            data={[userData]}
-            filename={"user_data.csv"}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg"
-          >
-            Export to CSV
-          </CSVLink>
-
-          <button
-            onClick={handleExcelExport}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-          >
-            Export to Excel
-          </button>
-        </div>
-
-        {/* Subscription Details */}
-        {subscriptionStatus && (
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold">Subscription Details</h2>
-            <p><strong>Status:</strong> {userData.subscriptionStatus}</p>
           </div>
         )}
+      </div>
 
-       
+      {/* Experience Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Experience</h2>
+        {isEditingExperiences ? (
+          <div>
+            {userData.experiences.map((experience, index) => (
+              <div key={index} className="mb-4 border-b border-gray-200 pb-4">
+                <input
+                  type="text"
+                  value={experience.position}
+                  onChange={(e) =>
+                    handleExperienceChange(index, "position", e.target.value)
+                  }
+                  placeholder="Job Title"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={experience.company}
+                  onChange={(e) =>
+                    handleExperienceChange(index, "company", e.target.value)
+                  }
+                  placeholder="Company Name"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={experience.startDate}
+                  onChange={(e) =>
+                    handleExperienceChange(index, "startDate", e.target.value)
+                  }
+                  placeholder="Start Date"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={experience.endDate}
+                  onChange={(e) =>
+                    handleExperienceChange(index, "endDate", e.target.value)
+                  }
+                  placeholder="End Date"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                />
+                <button
+                  onClick={() => handleRemoveExperience(index)}
+                  className="text-red-500 hover:underline mt-2"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={handleAddExperience}
+              className="text-blue-600 hover:underline mb-4"
+            >
+              + Add Experience
+            </button>
+            <div>
+              <button
+                onClick={() => {
+                  saveData(); // Save data when the user clicks "Save"
+                  setIsEditingExperiences(false); // Exit edit mode
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setIsEditingExperiences(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <ul className="space-y-4">
+              {userData.experiences.map((experience, index) => (
+                <li key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">{experience.position}</h3>
+                    <p className="text-gray-600">
+                      {experience.company} | {experience.startDate} - {experience.endDate}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingExperiences(true)}
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Education Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Education</h2>
+        {isEditingEducation ? (
+          <div>
+            {userData.education.map((edu, index) => (
+              <div key={index} className="mb-4 border-b border-gray-200 pb-4">
+                <input
+                  type="text"
+                  value={edu.degree}
+                  onChange={(e) =>
+                    handleEducationChange(index, "degree", e.target.value)
+                  }
+                  placeholder="Degree"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={edu.school}
+                  onChange={(e) =>
+                    handleEducationChange(index, "school", e.target.value)
+                  }
+                  placeholder="School Name"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={edu.startDate}
+                  onChange={(e) =>
+                    handleEducationChange(index, "startDate", e.target.value)
+                  }
+                  placeholder="Start Date"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
+                  value={edu.endDate}
+                  onChange={(e) =>
+                    handleEducationChange(index, "endDate", e.target.value)
+                  }
+                  placeholder="End Date"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                />
+                <button
+                  onClick={() => handleRemoveEducation(index)}
+                  className="text-red-500 hover:underline mt-2"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={handleAddEducation}
+              className="text-blue-600 hover:underline mb-4"
+            >
+              + Add Education
+            </button>
+            <div>
+              <button
+                onClick={() => {
+                  saveData(); // Save data when the user clicks "Save"
+                  setIsEditingEducation(false); // Exit edit mode
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setIsEditingEducation(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <ul className="space-y-4">
+              {userData.education.map((edu, index) => (
+                <li key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
+                    <p className="text-gray-600">
+                      {edu.school} | {edu.startDate} - {edu.endDate}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingEducation(true)}
+                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                  >
+                    Edit
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Social Links Section */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Social Links</h2>
+        <a
+          href={userData.linkedIn}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline"
+        >
+          LinkedIn
+        </a>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ const Subscribe = () => {
     const [error, setError] = useState('');
     const [plans, setPlans] = useState([]);
     const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+    const [profileComplete, setProfileComplete] = useState(null);
 
     const db = getFirestore(); // Initialize Firestore
 
@@ -75,14 +76,16 @@ const Subscribe = () => {
     const fetchSubscriptionStatus = async () => {
         try {
             if (currentUser && currentUser.email) {
-                const userRef = doc(db, 'Users', currentUser.email);
+                const userRef = doc(db, 'Users', currentUser.uid);
                 const docSnap = await getDoc(userRef);
 
                 if (docSnap.exists()) {
                     setSubscriptionStatus(docSnap.data().subscriptionStatus); // Set the status from Firestore
+                    setProfileComplete(docSnap.data().profileComplete);
                 } else {
                     console.error('No such document!');
                     setSubscriptionStatus('inactive'); // Default to inactive if no status found
+                    setProfileComplete('false');
                 }
             }
         } catch (error) {
@@ -95,10 +98,20 @@ const Subscribe = () => {
 
         // Redirect if already subscribed
         useEffect(() => {
-            if (subscriptionStatus === 'active') {
-                navigate('/dashboard');
+            if (subscriptionStatus === 'active' && profileComplete === true) {
+                navigate('/main-app/dashboard');
+            } else if (subscriptionStatus === 'active' && profileComplete !== true) {
+                navigate('/main-app-forms');
             }
-        }, [subscriptionStatus, navigate]);
+        }, [subscriptionStatus, profileComplete, navigate]);
+        
+        useEffect(() => {
+            if (currentUser) {
+                fetchSubscriptionStatus();
+            }
+        }, [currentUser]);
+        
+          
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
