@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import { db } from '../services/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const jobOptions = [ // List of job options
@@ -732,15 +732,57 @@ const JobSearch = () => {
     return { min: null, max: null };
   }
 
-  const handleSubmit = () => {
-    // Ensure filteredJobs is updated with the filtered result
-    const filtered = filterJobs();
-    console.log(filtered);
-    setFilteredJobs(filtered);
+  // Update the handleSubmit function
+  const handleSubmit = async () => {
+    try {
+      if (!userId) {
+        console.error("No user ID found");
+        return;
+      }
 
-    // Hide the form fields after submission
-    setActiveStep(4);
-    setPanesVisible(false);
+        // Prepare the search data
+      const searchData = {
+        userId: userId,
+        timestamp: new Date(),
+        preferences: {
+          jobTitle: jobPreferences.jobTitle,
+          industry: jobPreferences.industry,
+          employmentType: jobPreferences.employmentType,
+          location: jobPreferences.location,
+          salaryExpectation: jobPreferences.salaryExpectation,
+        },
+        skills: skills,
+        software: software.filter(s => s.tool && s.proficiency), // Only save complete entries
+        additionalInfo: {
+          certifications: additionalInfo.certifications.filter(cert => cert.name && cert.organization), // Only save complete entries
+          willingToRelocate: additionalInfo.willingToRelocate,
+          links: additionalInfo.links,
+        }
+      };
+
+      // Save to user's searches collection
+      const userSearchesRef = collection(db, 'Users', userId, 'JobSearches');
+      await addDoc(userSearchesRef, searchData);
+
+      // Also update the user's latest search preferences
+      const userRef = doc(db, 'Users', userId);
+      await setDoc(userRef, {
+        lastJobSearch: searchData,
+        lastSearchDate: new Date()
+      }, { merge: true });
+
+      console.log('Search preferences saved successfully');
+
+      // Continue with the existing functionality
+      const filtered = filterJobs();
+      setFilteredJobs(filtered);
+      setActiveStep(4);
+      setPanesVisible(false);
+
+    } catch (error) {
+      console.error('Error saving search preferences:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   const JobPreferencesForm = ({ jobPreferences, setJobPreferences }) => {
