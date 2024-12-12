@@ -20,5 +20,5 @@
   "devDependencies": {
     "@types/dotenv": "^6.1.1"
   },
-    "type": "module"
+  "type": "module"
 }

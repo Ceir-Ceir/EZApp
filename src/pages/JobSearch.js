@@ -792,39 +792,43 @@ const JobSearch = () => {
         <div className="grid grid-cols-2 gap-4">
           <Select
             options={jobOptions}
-            value={jobPreferences.jobTitle}
-            onChange={(selectedOption) => {
-              // Assuming selectedOption is an object with label and value
-              const selectedValue = selectedOption ? selectedOption.value : '';
-              setJobPreferences({ ...jobPreferences, jobTitle: selectedValue });
-            }}
+            value={jobOptions.find(option => option.value === jobPreferences.jobTitle)}
+            onChange={(selectedOption) => 
+              setJobPreferences({ 
+                ...jobPreferences, 
+                jobTitle: selectedOption ? selectedOption.value : '' 
+              })
+            }
             placeholder="Select Job Title"
             isSearchable
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
           />
-
+  
           <Select
             options={industryOptions}
-            value={industryOptions.find(option => option.value === jobPreferences.industry)} // Set selected industry
+            value={industryOptions.find(option => option.value === jobPreferences.industry)}
             onChange={(selectedOption) =>
-              setJobPreferences({ ...jobPreferences, industry: selectedOption.value }) // Update industry in preferences
+              setJobPreferences({ 
+                ...jobPreferences, 
+                industry: selectedOption ? selectedOption.value : '' 
+              })
             }
             placeholder="Select Preferred Industry"
             isSearchable
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
           />
+  
           <select
             value={jobPreferences.employmentType}
             onChange={(e) => setJobPreferences({ ...jobPreferences, employmentType: e.target.value })}
             className="border border-gray-300 rounded-lg px-4 py-2"
           >
-            <option value="" disabled>
-              Employment Type
-            </option>
+            <option value="" disabled>Employment Type</option>
             <option value="Full-Time">Full-Time</option>
             <option value="Part-Time">Part-Time</option>
             <option value="Contract">Contract</option>
           </select>
+  
           <input
             type="text"
             placeholder="Preferred Location"
@@ -832,16 +836,15 @@ const JobSearch = () => {
             onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
             className="border border-gray-300 rounded-lg px-4 py-2"
           />
+  
           <Select
             options={salaryRangeOptions}
-            value={salaryRangeOptions.find(option =>
-              option.value === `${jobPreferences.salaryExpectation.min / 1000}-${jobPreferences.salaryExpectation.max / 1000 || "150k+"}`
-            )}
+            value={salaryRangeOptions.find(option => {
+              const currentRange = `${jobPreferences.salaryExpectation.min / 1000}-${jobPreferences.salaryExpectation.max / 1000 || "150k+"}`;
+              return option.value === currentRange;
+            })}
             onChange={(selectedOption) => {
-              // Log the selected option
               console.log("Selected Salary Range:", selectedOption);
-
-              // Parse and set the salaryExpectation in the state
               setJobPreferences({
                 ...jobPreferences,
                 salaryExpectation: parseRange(selectedOption),

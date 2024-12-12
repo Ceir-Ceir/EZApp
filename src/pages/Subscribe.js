@@ -15,68 +15,74 @@ const Subscribe = () => {
     const [subscriptionStatus, setSubscriptionStatus] = useState(null);
     const [profileComplete, setProfileComplete] = useState(false);
 
+    const baseUrl = window.location.hostname === 'localhost' 
+    ? 'http://localhost:4242' 
+    : `https://${window.location.hostname.replace('-3000', '-4242')}.app.github.dev`;
+
+
     const db = getFirestore();
 
-    // Fetch plans from the server
-    const fetchPlans = async () => {
-        try {
-            setLoading(true);
-            console.log('Fetching plans...');
-            
-            const response = await fetch('http://localhost:4242/api/get-plans');
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Fetched plans:', data);
-            setPlans(data);
-        } catch (err) {
-            console.error('Error fetching plans:', err);
-            setError('Failed to load subscription plans. Please try again later.');
-        } finally {
-            setLoading(false);
+    // Update the fetchPlans function
+const fetchPlans = async () => {
+    try {
+        setLoading(true);
+        console.log('Fetching plans...', baseUrl);
+        
+        const response = await fetch(`${baseUrl}/api/get-plans`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
-    };
 
-    // Handle subscription creation
-    const handleSubscribe = async (priceId) => {
-        try {
-            const stripe = await stripePromise;
-            if (!stripe) {
-                throw new Error('Failed to load Stripe');
-            }
+        const data = await response.json();
+        console.log('Fetched plans:', data);
+        setPlans(data);
+    } catch (err) {
+        console.error('Error fetching plans:', err);
+        setError('Failed to load subscription plans. Please try again later.');
+    } finally {
+        setLoading(false);
+    }
+};
 
-            console.log('Creating checkout session...');
-            const response = await fetch('http://localhost:4242/api/create-checkout-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    priceId,
-                    userId: currentUser?.uid,
-                    userEmail: currentUser?.email,
-                }),
-            });
 
-            const session = await response.json();
-
-            if (!response.ok || session.error) {
-                throw new Error(session.error || 'Failed to create checkout session');
-            }
-
-            console.log('Redirecting to Stripe Checkout...');
-            const { error } = await stripe.redirectToCheckout({ sessionId: session.id });
-            
-            if (error) {
-                throw error;
-            }
-        } catch (err) {
-            console.error('Subscription error:', err);
-            setError('Failed to initiate subscription. Please try again.');
+    // Update the handleSubscribe function
+const handleSubscribe = async (priceId) => {
+    try {
+        const stripe = await stripePromise;
+        if (!stripe) {
+            throw new Error('Failed to load Stripe');
         }
-    };
+
+        console.log('Creating checkout session...');
+        const response = await fetch(`${baseUrl}/api/create-checkout-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                priceId,
+                userId: currentUser?.uid,
+                userEmail: currentUser?.email,
+            }),
+        });
+
+        const session = await response.json();
+
+        if (!response.ok || session.error) {
+            throw new Error(session.error || 'Failed to create checkout session');
+        }
+
+        console.log('Redirecting to Stripe Checkout...');
+        const { error } = await stripe.redirectToCheckout({ sessionId: session.id });
+        
+        if (error) {
+            throw error;
+        }
+    } catch (err) {
+        console.error('Subscription error:', err);
+        setError('Failed to initiate subscription. Please try again.');
+    }
+};
 
     // Fetch subscription status from Firestore
     const fetchSubscriptionStatus = async () => {

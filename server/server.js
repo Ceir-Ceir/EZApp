@@ -24,14 +24,15 @@ if (!admin.apps.length) {
 const app = express();
 const db = admin.firestore();
 
-// Enable CORS specifically for your React app
+// Enable CORS
 app.use(cors({
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'stripe-signature'],
+    credentials: true
 }));
 
-// Serve static files from the root public directory
+// Serve static files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Use JSON parsing for regular routes
@@ -43,14 +44,14 @@ app.use((req, res, next) => {
     }
 });
 
-// Helper function to map Stripe product IDs to subscription levels and quotas
+// Plan mapping configuration
 const PLAN_MAPPING = {
     'prod_RDJYaEEgMIyPqF': { level: 'basic', quota: 100 },
     'prod_RDJYTicEOJVQZQ': { level: 'premium', quota: 250 },
     'prod_RDJYLWEbkLpU1S': { level: 'pro', quota: 500 },
 };
 
-// Helper function to update user subscription status in Firebase
+// Helper function to update user subscription
 async function updateUserSubscription(userId, status, planId) {
     try {
         const planInfo = PLAN_MAPPING[planId] || { level: 'basic', quota: 100 };
@@ -74,7 +75,7 @@ async function updateUserSubscription(userId, status, planId) {
     }
 }
 
-// Webhook endpoint to handle Stripe events
+// Webhook endpoint
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -89,7 +90,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             const subscription = event.data.object;
             const userId = subscription.metadata.userId;
             
-            // Get the product ID from the subscription
             const priceId = subscription.items.data[0].price.id;
             const price = await stripe.prices.retrieve(priceId);
             const productId = price.product;
@@ -105,18 +105,16 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     }
 });
 
-// Endpoint to fetch available plans
+// Get plans endpoint
 app.get('/api/get-plans', async (req, res) => {
     try {
-        // Fetch both products and prices
         const [products, prices] = await Promise.all([
             stripe.products.list({ active: true }),
             stripe.prices.list({ active: true })
         ]);
 
-        // Map products and prices together
         const formattedPlans = prices.data
-            .filter(price => price.recurring) // Only get subscription prices
+            .filter(price => price.recurring)
             .map(price => {
                 const product = products.data.find(p => p.id === price.product);
                 return {
@@ -133,7 +131,6 @@ app.get('/api/get-plans', async (req, res) => {
                 };
             });
 
-        // Sort plans by price
         const sortedPlans = formattedPlans.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
         
         console.log('Successfully fetched plans:', sortedPlans);
@@ -147,7 +144,7 @@ app.get('/api/get-plans', async (req, res) => {
     }
 });
 
-// Endpoint to create a checkout session
+// Create checkout session endpoint
 app.post('/api/create-checkout-session', async (req, res) => {
     const { priceId, userId, userEmail } = req.body;
 
