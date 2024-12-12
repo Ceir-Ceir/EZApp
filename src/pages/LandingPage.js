@@ -61,10 +61,10 @@ const LandingPage = () => {
             </header>
         
             {/* Hero Section */}
-            <div className="relative w-full pt-20 pb-8 px-4">
+            <div className="relative w-full pt-12 pb-4 px-4"> {/* Reduced padding top and bottom */}
                 <div className="max-w-7xl mx-auto">
                     {/* Social Proof - Above everything */}
-                    <div className="flex justify-center items-center gap-4 mb-12">
+                    <div className="flex justify-center items-center gap-4 mb-8"> {/* Reduced margin bottom */}
                         <div className="flex -space-x-2">
                             <img src="/images/av1.jpeg" alt="User" className="w-8 h-8 rounded-full border-2 border-white" />
                             <img src="/images/av2.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white" />
@@ -76,60 +76,64 @@ const LandingPage = () => {
                         <span className="text-gray-600">20k+</span>
                         <div className="flex text-yellow-400">★★★★★</div>
                     </div>
+                </div>
+            </div>
 
-                    {/* Main Content with Email Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                        {/* Left Email Card */}
-                        <div className="hidden md:block">
-                            <div className="md:ml-8 w-full md:max-w-xs bg-white rounded-xl shadow-lg border border-gray-200 p-4 transform rotate-3 absolute left-8">
-                                <h4 className="text-xs text-gray-700 font-semibold mb-2">New email</h4>
-                                <div className="text-xs text-gray-700 mb-2">To: <span className="font-semibold">hr@company.co</span></div>
-                                <div className="text-xs text-gray-700 mb-2">Subject: Checking In on CEO Application</div>
-                                <p className="text-xs text-gray-600 mt-4 leading-tight">
-                                    Hi John, <br />
-                                    Hope this email finds you well! Just a friendly ping on my application for the CEO position at AIApply.
-                                    Given my background with SpaceX and passion for space exploration, I believe I could bring some unique
-                                    perspectives to the table. It's not every day you get an application from someone who's sent a car to orbit Mars, right? 😉
-                                </p>
-                                <p className="text-xs text-gray-600 mt-2">Cheers, <br /> Elon</p>
-                            </div>
+            {/* Main Content with Email Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative max-w-6xl mx-auto -mt-4">
+                {/* Left Email Card */}
+                <div className="hidden md:block relative">
+                    <div className="transform scale-75 origin-top-left"> {/* Scale down by 25% */}
+                        <div className="w-[280px] bg-white rounded-xl shadow-lg border border-gray-200 p-4 transform rotate-3">
+                            <h4 className="text-xs text-gray-700 font-semibold mb-2">New email</h4>
+                            <div className="text-xs text-gray-700 mb-2">To: <span className="font-semibold">hr@company.co</span></div>
+                            <div className="text-xs text-gray-700 mb-2">Subject: Checking In on CEO Application</div>
+                            <p className="text-xs text-gray-600 mt-4 leading-tight">
+                                Hi John, <br />
+                                Hope this email finds you well! Just a friendly ping on my application for the CEO position at AIApply.
+                                Given my background with SpaceX and passion for space exploration, I believe I could bring some unique
+                                perspectives to the table. It's not every day you get an application from someone who's sent a car to orbit Mars, right? 😉
+                            </p>
+                            <p className="text-xs text-gray-600 mt-2">Cheers, <br /> Elon</p>
                         </div>
+                    </div>
+                </div>
 
-                        {/* Center Content */}
-                        <div className="flex justify-center items-center w-full py-4">
-                            <div className="text-center flex flex-col items-center max-w-full">
-                                <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4 whitespace-nowrap">
-                                    Automate Your Job Search
-                                </h1>
-                                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 whitespace-nowrap">
-                                    Apply to MORE Jobs Effortlessly
-                                </h2>
-                                <p className="text-gray-600 text-xl md:text-2xl mb-8 whitespace-nowrap">
-                                    Your job search shouldn't be a job.
-                                </p>
-                                <Link 
-                                    to="/login" 
-                                    className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center gap-2"
-                                >
-                                    Get Started
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </Link>
-                            </div>
-                        </div>
+                {/* Center Content */}
+                <div className="flex justify-center items-center w-full py-4 col-span-1">
+                    <div className="text-center flex flex-col items-center max-w-full px-4">
+                        <h1 className="text-5xl md:text-5xl font-bold text-gray-900 mb-4 whitespace-nowrap">
+                            Automate Your Job Search
+                        </h1>
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 whitespace-nowrap">
+                            Apply to MORE Jobs Effortlessly
+                        </h2>
+                        <p className="text-gray-600 text-xl md:text-2xl mb-8 whitespace-nowrap">
+                            Your job search shouldn't be a job.
+                        </p>
+                        <Link 
+                            to="/login" 
+                            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center gap-2"
+                        >
+                            Get Started
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </Link>
+                    </div>
+                </div>
 
-                        {/* Right Email Card */}
-                        <div className="hidden md:block">
-                            <div className="md:mr-8 w-full md:max-w-xs bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-4 transform -rotate-2 absolute right-8">
-                                <h4 className="text-xs text-gray-700 font-semibold mb-2">Dear HR Manager,</h4>
-                                <p className="text-xs text-gray-600 mt-2 leading-tight">
-                                    I'm reaching out about the engineering gig at AIApply. You're looking for an innovator and boundary-pusher in tech. Well, guess what? That's exactly my jam.
-                                    <br /><br />
-                                    You might've heard of a little company called SpaceX. As the CEO and lead designer, I turned the aerospace industry on its head. Reusable rockets? Commercial trips to Mars? That was all me.
-                                </p>
-                                <p className="text-xs text-gray-600 mt-2">Best, <br /> Elon</p>
-                            </div>
+                {/* Right Email Card */}
+                <div className="hidden md:block relative">
+                    <div className="transform scale-75 origin-top-right"> {/* Scale down by 25% */}
+                        <div className="w-[280px] bg-gray-100 rounded-xl shadow-lg border border-gray-200 p-4 transform -rotate-2 ml-auto">
+                            <h4 className="text-xs text-gray-700 font-semibold mb-2">Dear HR Manager,</h4>
+                            <p className="text-xs text-gray-600 mt-2 leading-tight">
+                                I'm reaching out about the engineering gig at AIApply. You're looking for an innovator and boundary-pusher in tech. Well, guess what? That's exactly my jam.
+                                <br /><br />
+                                You might've heard of a little company called SpaceX. As the CEO and lead designer, I turned the aerospace industry on its head. Reusable rockets? Commercial trips to Mars? That was all me.
+                            </p>
+                            <p className="text-xs text-gray-600 mt-2">Best, <br /> Elon</p>
                         </div>
                     </div>
                 </div>
