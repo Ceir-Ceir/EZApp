@@ -180,10 +180,6 @@ const DashboardView = () => {
             <span className="font-medium">Phone: </span>
             {userData.phone}
           </p>
-          <p className="text-gray-700">
-            <span className="font-medium">Location: </span>
-            {userData.location}
-          </p>
         </div>
       </div>
 

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import { db } from '../services/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-const jobOptions = [ // List of job options
+
+const jobOptions = [ // List of job options 
   { value: "Accountant", label: "Accountant" },
   { value: "Actor", label: "Actor" },
   { value: "Actuary", label: "Actuary" },
@@ -376,6 +377,218 @@ const salaryRangeOptions = [ // salary range options here
   { value: "150k+", label: "$150,000+" }
 ];
 
+const cityOptions = [ // List of city options
+  { value: "Akron, OH", label: "Akron, OH" },
+  { value: "Albany, NY", label: "Albany, NY" },
+  { value: "Alexandria, VA", label: "Alexandria, VA" },
+  { value: "Allentown, PA", label: "Allentown, PA" },
+  { value: "Albuquerque, NM", label: "Albuquerque, NM" },
+  { value: "Amarillo, TX", label: "Amarillo, TX" },
+  { value: "Anaheim, CA", label: "Anaheim, CA" },
+  { value: "Anchorage, AK", label: "Anchorage, AK" },
+  { value: "Ann Arbor, MI", label: "Ann Arbor, MI" },
+  { value: "Antioch, CA", label: "Antioch, CA" },
+  { value: "Asheville, NC", label: "Asheville, NC" },
+  { value: "Athens, GA", label: "Athens, GA" },
+  { value: "Atlanta, GA", label: "Atlanta, GA" },
+  { value: "Atlantic City, NJ", label: "Atlantic City, NJ" },
+  { value: "Augusta, GA", label: "Augusta, GA" },
+  { value: "Aurora, CO", label: "Aurora, CO" },
+  { value: "Aurora, IL", label: "Aurora, IL" },
+  { value: "Austin, TX", label: "Austin, TX" },
+  { value: "Bakersfield, CA", label: "Bakersfield, CA" },
+  { value: "Baltimore, MD", label: "Baltimore, MD" },
+  { value: "Baton Rouge, LA", label: "Baton Rouge, LA" },
+  { value: "Beaumont, TX", label: "Beaumont, TX" },
+  { value: "Bellingham, WA", label: "Bellingham, WA" },
+  { value: "Bend, OR", label: "Bend, OR" },
+  { value: "Billings, MT", label: "Billings, MT" },
+  { value: "Birmingham, AL", label: "Birmingham, AL" },
+  { value: "Bloomington, IN", label: "Bloomington, IN" },
+  { value: "Boise, ID", label: "Boise, ID" },
+  { value: "Boise City, ID", label: "Boise City, ID" },
+  { value: "Boston, MA", label: "Boston, MA" },
+  { value: "Bowling Green, KY", label: "Bowling Green, KY" },
+  { value: "Bridgeport, CT", label: "Bridgeport, CT" },
+  { value: "Brownsville, TX", label: "Brownsville, TX" },
+  { value: "Buffalo, NY", label: "Buffalo, NY" },
+  { value: "Cape Coral, FL", label: "Cape Coral, FL" },
+  { value: "Carson City, NV", label: "Carson City, NV" },
+  { value: "Cedar Rapids, IA", label: "Cedar Rapids, IA" },
+  { value: "Champaign, IL", label: "Champaign, IL" },
+  { value: "Chandler, AZ", label: "Chandler, AZ" },
+  { value: "Charleston, SC", label: "Charleston, SC" },
+  { value: "Charleston, WV", label: "Charleston, WV" },
+  { value: "Charlotte, NC", label: "Charlotte, NC" },
+  { value: "Chattanooga, TN", label: "Chattanooga, TN" },
+  { value: "Cheyenne, WY", label: "Cheyenne, WY" },
+  { value: "Chicago, IL", label: "Chicago, IL" },
+  { value: "Chula Vista, CA", label: "Chula Vista, CA" },
+  { value: "Cincinnati, OH", label: "Cincinnati, OH" },
+  { value: "Clarksville, TN", label: "Clarksville, TN" },
+  { value: "Clearwater, FL", label: "Clearwater, FL" },
+  { value: "Cleveland, OH", label: "Cleveland, OH" },
+  { value: "Cleveland Heights, OH", label: "Cleveland Heights, OH" },
+  { value: "College Station, TX", label: "College Station, TX" },
+  { value: "Colorado Springs, CO", label: "Colorado Springs, CO" },
+  { value: "Columbia, MO", label: "Columbia, MO" },
+  { value: "Columbia, SC", label: "Columbia, SC" },
+  { value: "Columbus, GA", label: "Columbus, GA" },
+  { value: "Columbus, OH", label: "Columbus, OH" },
+  { value: "Concord, NH", label: "Concord, NH" },
+  { value: "Coral Springs, FL", label: "Coral Springs, FL" },
+  { value: "Corpus Christi, TX", label: "Corpus Christi, TX" },
+  { value: "Dallas, TX", label: "Dallas, TX" },
+  { value: "Davenport, IA", label: "Davenport, IA" },
+  { value: "Daytona Beach, FL", label: "Daytona Beach, FL" },
+  { value: "Deltona, FL", label: "Deltona, FL" },
+  { value: "Denver, CO", label: "Denver, CO" },
+  { value: "Denton, TX", label: "Denton, TX" },
+  { value: "Des Moines, IA", label: "Des Moines, IA" },
+  { value: "Detroit, MI", label: "Detroit, MI" },
+  { value: "Dothan, AL", label: "Dothan, AL" },
+  { value: "Dover, DE", label: "Dover, DE" },
+  { value: "Duluth, MN", label: "Duluth, MN" },
+  { value: "Durham, NC", label: "Durham, NC" },
+  { value: "Eau Claire, WI", label: "Eau Claire, WI" },
+  { value: "Edinburg, TX", label: "Edinburg, TX" },
+  { value: "El Paso, TX", label: "El Paso, TX" },
+  { value: "Elgin, IL", label: "Elgin, IL" },
+  { value: "Elizabeth, NJ", label: "Elizabeth, NJ" },
+  { value: "Erie, PA", label: "Erie, PA" },
+  { value: "Escondido, CA", label: "Escondido, CA" },
+  { value: "Eugene, OR", label: "Eugene, OR" },
+  { value: "Evansville, IN", label: "Evansville, IN" },
+  { value: "Fargo, ND", label: "Fargo, ND" },
+  { value: "Fayetteville, AR", label: "Fayetteville, AR" },
+  { value: "Fayetteville, NC", label: "Fayetteville, NC" },
+  { value: "Flint, MI", label: "Flint, MI" },
+  { value: "Florence, SC", label: "Florence, SC" },
+  { value: "Fort Collins, CO", label: "Fort Collins, CO" },
+  { value: "Fort Smith, AR", label: "Fort Smith, AR" },
+  { value: "Fort Wayne, IN", label: "Fort Wayne, IN" },
+  { value: "Fort Worth, TX", label: "Fort Worth, TX" },
+  { value: "Frederick, MD", label: "Frederick, MD" },
+  { value: "Fremont, CA", label: "Fremont, CA" },
+  { value: "Fresno, CA", label: "Fresno, CA" },
+  { value: "Gainesville, FL", label: "Gainesville, FL" },
+  { value: "Galveston, TX", label: "Galveston, TX" },
+  { value: "Garland, TX", label: "Garland, TX" },
+  { value: "Gastonia, NC", label: "Gastonia, NC" },
+  { value: "Gilbert, AZ", label: "Gilbert, AZ" },
+  { value: "Glendale, AZ", label: "Glendale, AZ" },
+  { value: "Glendale, CA", label: "Glendale, CA" },
+  { value: "Grand Forks, ND", label: "Grand Forks, ND" },
+  { value: "Grand Rapids, MI", label: "Grand Rapids, MI" },
+  { value: "Green Bay, WI", label: "Green Bay, WI" },
+  { value: "Greensboro, NC", label: "Greensboro, NC" },
+  { value: "Greenville, SC", label: "Greenville, SC" },
+  { value: "Gulfport, MS", label: "Gulfport, MS" },
+  { value: "Hagerstown, MD", label: "Hagerstown, MD" },
+  { value: "Hampton, VA", label: "Hampton, VA" },
+  { value: "Harrisburg, PA", label: "Harrisburg, PA" },
+  { value: "Hartford, CT", label: "Hartford, CT" },
+  { value: "Hattiesburg, MS", label: "Hattiesburg, MS" },
+  { value: "Henderson, NV", label: "Henderson, NV" },
+  { value: "Hialeah, FL", label: "Hialeah, FL" },
+  { value: "Hickory, NC", label: "Hickory, NC" },
+  { value: "High Point, NC", label: "High Point, NC" },
+  { value: "Hollywood, FL", label: "Hollywood, FL" },
+  { value: "Honolulu, HI", label: "Honolulu, HI" },
+  { value: "Hoover, AL", label: "Hoover, AL" },
+  { value: "Hot Springs, AR", label: "Hot Springs, AR" },
+  { value: "Houston, TX", label: "Houston, TX" },
+  { value: "Huntsville, AL", label: "Huntsville, AL" },
+  { value: "Idaho Falls, ID", label: "Idaho Falls, ID" },
+  { value: "Independence, MO", label: "Independence, MO" },
+  { value: "Indianapolis, IN", label: "Indianapolis, IN" },
+  { value: "Irvine, CA", label: "Irvine, CA" },
+  { value: "Irving, TX", label: "Irving, TX" },
+  { value: "Jackson, MS", label: "Jackson, MS" },
+  { value: "Jacksonville, FL", label: "Jacksonville, FL" },
+  { value: "Jacksonville, NC", label: "Jacksonville, NC" },
+  { value: "Jamestown, NY", label: "Jamestown, NY" },
+  { value: "Janesville, WI", label: "Janesville, WI" },
+  { value: "Jefferson City, MO", label: "Jefferson City, MO" },
+  { value: "Jersey City, NJ", label: "Jersey City, NJ" },
+  { value: "Joplin, MO", label: "Joplin, MO" },
+  { value: "Kalamazoo, MI", label: "Kalamazoo, MI" },
+  { value: "Kansas City, MO", label: "Kansas City, MO" },
+  { value: "Kearney, NE", label: "Kearney, NE" },
+  { value: "Kenosha, WI", label: "Kenosha, WI" },
+  { value: "Killeen, TX", label: "Killeen, TX" },
+  { value: "Kissimmee, FL", label: "Kissimmee, FL" },
+  { value: "Knoxville, TN", label: "Knoxville, TN" },
+  { value: "Lafayette, LA", label: "Lafayette, LA" },
+  { value: "Laramie, WY", label: "Laramie, WY" },
+  { value: "Laredo, TX", label: "Laredo, TX" },
+  { value: "Largo, FL", label: "Largo, FL" },
+  { value: "Las Cruces, NM", label: "Las Cruces, NM" },
+  { value: "Las Vegas, NV", label: "Las Vegas, NV" },
+  { value: "Lawrence, KS", label: "Lawrence, KS" },
+  { value: "Lexington, KY", label: "Lexington, KY" },
+  { value: "Lexington, SC", label: "Lexington, SC" },
+  { value: "Lima, OH", label: "Lima, OH" },
+  { value: "Lincoln, NE", label: "Lincoln, NE" },
+  { value: "Little Rock, AR", label: "Little Rock, AR" },
+  { value: "Livonia, MI", label: "Livonia, MI" },
+  { value: "Lodi, CA", label: "Lodi, CA" },
+  { value: "Long Beach, CA", label: "Long Beach, CA" },
+  { value: "Longmont, CO", label: "Longmont, CO" },
+  { value: "Los Angeles, CA", label: "Los Angeles, CA" },
+  { value: "Louisville, KY", label: "Louisville, KY" },
+  { value: "Lubbock, TX", label: "Lubbock, TX" },
+  { value: "Madison, WI", label: "Madison, WI" },
+  { value: "Memphis, TN", label: "Memphis, TN" },
+  { value: "Mesa, AZ", label: "Mesa, AZ" },
+  { value: "Miami, FL", label: "Miami, FL" },
+  { value: "Milwaukee, WI", label: "Milwaukee, WI" },
+  { value: "Minneapolis, MN", label: "Minneapolis, MN" },
+  { value: "Montgomery, AL", label: "Montgomery, AL" },
+  { value: "Nashville, TN", label: "Nashville, TN" },
+  { value: "New Orleans, LA", label: "New Orleans, LA" },
+  { value: "New York, NY", label: "New York, NY" },
+  { value: "Newark, NJ", label: "Newark, NJ" },
+  { value: "Norfolk, VA", label: "Norfolk, VA" },
+  { value: "North Las Vegas, NV", label: "North Las Vegas, NV" },
+  { value: "Oakland, CA", label: "Oakland, CA" },
+  { value: "Oklahoma City, OK", label: "Oklahoma City, OK" },
+  { value: "Omaha, NE", label: "Omaha, NE" },
+  { value: "Orlando, FL", label: "Orlando, FL" },
+  { value: "Philadelphia, PA", label: "Philadelphia, PA" },
+  { value: "Phoenix, AZ", label: "Phoenix, AZ" },
+  { value: "Pittsburgh, PA", label: "Pittsburgh, PA" },
+  { value: "Plano, TX", label: "Plano, TX" },
+  { value: "Portland, OR", label: "Portland, OR" },
+  { value: "Raleigh, NC", label: "Raleigh, NC" },
+  { value: "Reno, NV", label: "Reno, NV" },
+  { value: "Richmond, VA", label: "Richmond, VA" },
+  { value: "Riverside, CA", label: "Riverside, CA" },
+  { value: "Sacramento, CA", label: "Sacramento, CA" },
+  { value: "San Antonio, TX", label: "San Antonio, TX" },
+  { value: "San Diego, CA", label: "San Diego, CA" },
+  { value: "San Francisco, CA", label: "San Francisco, CA" },
+  { value: "San Jose, CA", label: "San Jose, CA" },
+  { value: "Santa Ana, CA", label: "Santa Ana, CA" },
+  { value: "Scottsdale, AZ", label: "Scottsdale, AZ" },
+  { value: "Seattle, WA", label: "Seattle, WA" },
+  { value: "Spokane, WA", label: "Spokane, WA" },
+  { value: "St. Louis, MO", label: "St. Louis, MO" },
+  { value: "St. Paul, MN", label: "St. Paul, MN" },
+  { value: "St. Petersburg, FL", label: "St. Petersburg, FL" },
+  { value: "Stockton, CA", label: "Stockton, CA" },
+  { value: "Tampa, FL", label: "Tampa, FL" },
+  { value: "Toledo, OH", label: "Toledo, OH" },
+  { value: "Tucson, AZ", label: "Tucson, AZ" },
+  { value: "Tulsa, OK", label: "Tulsa, OK" },
+  { value: "Virginia Beach, VA", label: "Virginia Beach, VA" },
+  { value: "Washington, DC", label: "Washington, DC" },
+  { value: "Wichita, KS", label: "Wichita, KS" },
+  { value: "Winston-Salem, NC", label: "Winston-Salem, NC" }, 
+  { value: "Wilmington,DE", label: "Wilmington, DE" } 
+
+  ].sort((a, b) => a.label.localeCompare(b.label));  
+
 const JobSearch = () => {
   const [activeStep, setActiveStep] = useState(1); // Tracks the current step
   const [panesVisible, setPanesVisible] = useState(true);
@@ -388,7 +601,7 @@ const JobSearch = () => {
     salaryExpectation: { min: "", max: "" },
   });
   const [skills, setSkills] = useState([]);
-  const [software, setSoftware] = useState([{ tool: "", proficiency: "" }]);
+  const [software, setSoftware] = useState([]);
   const [additionalInfo, setAdditionalInfo] = useState({
     certifications: [{ name: "", organization: "", issueDate: "", expirationDate: "" }],
     willingToRelocate: "",
@@ -729,48 +942,93 @@ const JobSearch = () => {
     return { min: null, max: null };
   }
 
-  const handleSubmit = () => {
-    // Ensure filteredJobs is updated with the filtered result
+  const handleSubmit = async () => {
+  try {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+
+    if (!userId) {
+      console.error("No authenticated user found");
+      return;
+    }
+
+    // Create the job search preferences object
+    const jobSearchPreferences = {
+      jobPreferences,
+      skills,
+      software: software.filter(s => s.tool && s.proficiency),
+      additionalInfo,
+      lastUpdated: new Date()
+    };
+
+    // Update existing user document
+    const userDocRef = doc(db, "Users", userId);
+    await updateDoc(userDocRef, {
+      jobSearchPreferences: jobSearchPreferences
+    });
+
+    console.log("Job search preferences updated for user:", userId);
+
+    // Filter jobs as before
     const filtered = filterJobs();
-    console.log(filtered);
     setFilteredJobs(filtered);
 
     // Hide the form fields after submission
     setActiveStep(4);
     setPanesVisible(false);
-  };
+
+  } catch (error) {
+    console.error("Error updating job search preferences: ", error);
+    // Log the full error for debugging
+    console.log("Full error:", error);
+  }
+};
 
   const JobPreferencesForm = ({ jobPreferences, setJobPreferences }) => {
+    // Unified handler for Select dropdowns
+    const handleSelectChange = (field, selectedOption) => {
+      setJobPreferences((prev) => ({
+        ...prev,
+        [field]: selectedOption ? selectedOption.value : "",
+      }));
+    };
+  
+    // Unified handler for text inputs
+    const handleInputChange = (field, value) => {
+      setJobPreferences((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    };
+  
     return (
       <div>
         <h2 className="text-xl font-semibold mb-4">Job Preferences</h2>
         <div className="grid grid-cols-2 gap-4">
+          {/* Job Title Dropdown */}
           <Select
             options={jobOptions}
-            value={jobPreferences.jobTitle}
-            onChange={(selectedOption) => {
-              // Assuming selectedOption is an object with label and value
-              const selectedValue = selectedOption ? selectedOption.value : '';
-              setJobPreferences({ ...jobPreferences, jobTitle: selectedValue });
-            }}
+            value={jobOptions.find((option) => option.value === jobPreferences.jobTitle)}
+            onChange={(selectedOption) => handleSelectChange("jobTitle", selectedOption)}
             placeholder="Select Job Title"
             isSearchable
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full"
           />
-
+  
+          {/* Industry Dropdown */}
           <Select
             options={industryOptions}
-            value={industryOptions.find(option => option.value === jobPreferences.industry)} // Set selected industry
-            onChange={(selectedOption) =>
-              setJobPreferences({ ...jobPreferences, industry: selectedOption.value }) // Update industry in preferences
-            }
+            value={industryOptions.find((option) => option.value === jobPreferences.industry)}
+            onChange={(selectedOption) => handleSelectChange("industry", selectedOption)}
             placeholder="Select Preferred Industry"
             isSearchable
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full"
           />
+  
+          {/* Employment Type Dropdown */}
           <select
             value={jobPreferences.employmentType}
-            onChange={(e) => setJobPreferences({ ...jobPreferences, employmentType: e.target.value })}
+            onChange={(e) => handleInputChange("employmentType", e.target.value)}
             className="border border-gray-300 rounded-lg px-4 py-2"
           >
             <option value="" disabled>
@@ -780,42 +1038,90 @@ const JobSearch = () => {
             <option value="Part-Time">Part-Time</option>
             <option value="Contract">Contract</option>
           </select>
-          <input
-            type="text"
-            placeholder="Preferred Location"
-            value={jobPreferences.location}
-            onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
-            className="border border-gray-300 rounded-lg px-4 py-2"
-          />
+  
+          {/* Location Input */}
           <Select
-            options={salaryRangeOptions}
-            value={salaryRangeOptions.find(option =>
-              option.value === `${jobPreferences.salaryExpectation.min / 1000}-${jobPreferences.salaryExpectation.max / 1000 || "150k+"}`
-            )}
+            options={cityOptions}
+            value={cityOptions.find(option => option.value === jobPreferences.location)}
             onChange={(selectedOption) => {
-              // Log the selected option
-              console.log("Selected Salary Range:", selectedOption);
-
-              // Parse and set the salaryExpectation in the state
               setJobPreferences({
                 ...jobPreferences,
-                salaryExpectation: parseRange(selectedOption),
+                location: selectedOption ? selectedOption.value : ''
               });
             }}
-            placeholder="Select Salary Range"
+            placeholder="Select or search for a city near you"
             isSearchable
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full"
           />
+  
+          {/* Salary Range Dropdown */}
+            <Select
+              options={salaryRangeOptions}
+              value={salaryRangeOptions.find((option) => {
+                const { min, max } = jobPreferences.salaryExpectation;
+                // Handle the special case for 150k+
+                if (max === Infinity) {
+                  return option.value === "150k+";
+                }
+                // Format current values to match option values
+                const minK = min ? Math.floor(min / 1000) : null;
+                const maxK = max ? Math.floor(max / 1000) : null;
+                const expectedValue = minK && maxK ? `${minK}-${maxK}k` : "";
+                return option.value === expectedValue;
+              })}
+              onChange={(selectedOption) => {
+                if (!selectedOption) {
+                  setJobPreferences(prev => ({
+                    ...prev,
+                    salaryExpectation: { min: "", max: "" }
+                  }));
+                  return;
+                }
+
+                let min, max;
+                if (selectedOption.value === "150k+") {
+                  min = 150000;
+                  max = Infinity;
+                } else {
+                  // Parse values like "30-50k"
+                  const [minStr, maxStr] = selectedOption.value.replace('k', '').split('-');
+                  min = parseInt(minStr) * 1000;
+                  max = parseInt(maxStr) * 1000;
+                }
+
+                setJobPreferences(prev => ({
+                  ...prev,
+                  salaryExpectation: { min, max }
+                }));
+              }}
+              placeholder="Select Salary Range"
+              isSearchable
+              className="w-full"
+            />
         </div>
       </div>
     );
   };
-
+  
+  
   const SkillsAndSoftwareForm = ({ skills, setSkills, software, setSoftware, handleAddSoftware, handleRemoveSoftware }) => {
+    const [newTool, setNewTool] = useState("");
+  
+    const handleToolKeyDown = (e) => {
+      if (e.key === "Enter" && newTool.trim() !== "") {
+        // Add new tool to software array
+        setSoftware([...software, { 
+          tool: newTool.trim(),
+          proficiency: "" 
+        }]);
+        // Clear input
+        setNewTool("");
+      }
+    };
+  
     return (
       <div>
         <h2 className="text-xl font-semibold mb-4">Skills</h2>
-        {/* Skills Input */}
         <div className="skills-input">
           <input
             type="text"
@@ -836,106 +1142,126 @@ const JobSearch = () => {
             ))}
           </div>
         </div>
+  
         <h2 className="text-xl font-semibold mb-4">Software/Tools</h2>
+        
+        {/* New tool input */}
+        <div className="flex gap-4 mb-4">
+          <input
+            type="text"
+            placeholder="Type software/tool name and press Enter"
+            value={newTool}
+            onChange={(e) => setNewTool(e.target.value)}
+            onKeyDown={handleToolKeyDown}
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+
+        {/* List of added tools */}
         {software.map((entry, index) => (
           <div key={index} className="flex gap-4 mb-4">
-            <input
-              type="text"
-              placeholder="Software/Tool"
-              value={entry.tool}
-              onChange={(e) =>
-                setSoftware((prevSoftware) =>
-                  prevSoftware.map((item, i) => (i === index ? { ...item, tool: e.target.value } : item))
-                )
-              }
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
-            />
+            <div className="flex-1 py-2 px-4 bg-gray-100 rounded-lg">
+              {entry.tool}
+            </div>
+            
             <select
-              value={entry.proficiency}
-              onChange={(e) =>
-                setSoftware(software.map((item, i) => (i === index ? { ...item, proficiency: e.target.value } : item)))
-              }
+              value={entry.proficiency || ""}
+              onChange={(e) => {
+                const updatedSoftware = [...software];
+                updatedSoftware[index] = {
+                  ...updatedSoftware[index],
+                  proficiency: e.target.value
+                };
+                setSoftware(updatedSoftware);
+              }}
               className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
             >
-              <option value="" disabled>
-                Proficiency Level
-              </option>
+              <option value="" disabled>Select Proficiency</option>
               <option value="Beginner">Beginner</option>
               <option value="Intermediate">Intermediate</option>
               <option value="Advanced">Advanced</option>
             </select>
+  
             <button onClick={() => handleRemoveSoftware(index)} className="text-red-500 hover:underline">
               Remove
             </button>
           </div>
         ))}
-        <button onClick={handleAddSoftware} className="text-blue-600 hover:underline">
-          + Add Software/Tool
-        </button>
       </div>
     );
   };
 
   const AdditionalInfoForm = ({ additionalInfo, setAdditionalInfo, handleAddCertification, handleRemoveCertification }) => {
+    const [localCerts, setLocalCerts] = useState(additionalInfo.certifications);
+    const [localLinks, setLocalLinks] = useState(additionalInfo.links || "");
+
+    // Update parent state when input field loses focus
+    const handleCertBlur = (index, field, value) => {
+      const updatedCerts = additionalInfo.certifications.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      );
+      setAdditionalInfo({
+        ...additionalInfo,
+        certifications: updatedCerts,
+      });
+    };
+
+    // Handle local state updates for smooth typing
+    const handleCertChange = (index, field, value) => {
+      const updatedCerts = localCerts.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      );
+      setLocalCerts(updatedCerts);
+    };
+
+    // Update links in parent state on blur
+    const handleLinksBlur = () => {
+      setAdditionalInfo({
+        ...additionalInfo,
+        links: localLinks,
+      });
+    };
+
+    // Keep local state in sync with parent state when certifications are added/removed
+    useEffect(() => {
+      setLocalCerts(additionalInfo.certifications);
+    }, [additionalInfo.certifications.length]);
+
     return (
       <div>
         <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
-        {additionalInfo.certifications.map((cert, index) => (
+        {localCerts.map((cert, index) => (
           <div key={index} className="mb-4">
             <input
               type="text"
               placeholder="Certification"
               value={cert.name}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, name: e.target.value } : item
-                  ),
-                })
-              }
+              onChange={(e) => handleCertChange(index, 'name', e.target.value)}
+              onBlur={(e) => handleCertBlur(index, 'name', e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
             />
             <input
               type="text"
               placeholder="Organization"
               value={cert.organization}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, organization: e.target.value } : item
-                  ),
-                })
-              }
+              onChange={(e) => handleCertChange(index, 'organization', e.target.value)}
+              onBlur={(e) => handleCertBlur(index, 'organization', e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
             />
             <input
               type="text"
               placeholder="Issue Date"
               value={cert.issueDate}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, issueDate: e.target.value } : item
-                  ),
-                })
-              }
+              onChange={(e) => handleCertChange(index, 'issueDate', e.target.value)}
+              onBlur={(e) => handleCertBlur(index, 'issueDate', e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
             />
             <input
               type="text"
               placeholder="Expiration Date"
               value={cert.expirationDate}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, expirationDate: e.target.value } : item
-                  ),
-                })
-              }
+              onChange={(e) => handleCertChange(index, 'expirationDate', e.target.value)}
+              onBlur={(e) => handleCertBlur(index, 'expirationDate', e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
             />
             <button
@@ -975,13 +1301,14 @@ const JobSearch = () => {
         <h2 className="text-xl font-semibold mb-4 mt-6">Relevant Links</h2>
         <textarea
           placeholder="Enter any relevant links (e.g., portfolio, LinkedIn)"
-          value={additionalInfo.links}
-          onChange={(e) => setAdditionalInfo({ ...additionalInfo, links: e.target.value })}
+          value={localLinks}
+          onChange={(e) => setLocalLinks(e.target.value)}
+          onBlur={handleLinksBlur}
           className="w-full border border-gray-300 rounded-lg px-4 py-2"
         />
       </div>
     );
-  };
+};
 
   const renderForm = () => {
     switch (activeStep) {

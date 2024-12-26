@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'; 
+import { getStorage } from 'firebase/storage';
 
 console.log('Environment Variables:', process.env);
 
@@ -28,5 +30,9 @@ console.log('Auth instance created successfully');
 const db = getFirestore(app);
 console.log('Firestore instance created successfully');
 
-// Export only the services you need
-export { auth, db }; // Removed Firestore export (db)
+// Initialize Storage with explicit app parameter
+const storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
+console.log('Storage instance created successfully');
+
+// Export the services
+export { auth, db, storage, app };
