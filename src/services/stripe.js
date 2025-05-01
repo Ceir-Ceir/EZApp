@@ -1,7 +1,7 @@
 // src/services/stripe.js
 import { loadStripe } from '@stripe/stripe-js';
 import { db } from './firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { STRIPE_PRICES } from '../config/stripe';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -54,21 +54,20 @@ export async function createSubscription(userId, priceId) {
 }
 
 // Update the subscription status in Firestore
-export async function handleSubscriptionStatusChange(userId, status) {
-    if (!userId || typeof status !== 'string') {
-        throw new Error('Invalid parameters for updating subscription status.');
-    }
+export const updateUserSubscriptionStatus = async (userId, status, planLevel) => {
     try {
-        const userRef = doc(db, 'Users', userId);
+        const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
             subscriptionStatus: status,
-            updatedAt: new Date().toISOString()
+            planLevel: planLevel,
+            updatedAt: serverTimestamp()
         });
+        console.log(`Updated subscription status for user ${userId} to ${status} with plan level ${planLevel}`);
     } catch (error) {
         console.error('Error updating subscription status:', error);
         throw error;
     }
-}
+};
 
 // Check the user's subscription status from Firestore
 export async function checkSubscriptionStatus(userId) {

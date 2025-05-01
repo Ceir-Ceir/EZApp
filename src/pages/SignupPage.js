@@ -1,9 +1,9 @@
 // src/pages/signup.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.js';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth, db } from '../services/firebase'; 
+import { auth, db } from '../services/firebase.js'; 
 import { doc, setDoc } from 'firebase/firestore';
 
 const Signup = () => {

@@ -8,7 +8,7 @@ const app = express();
 
 // Enable CORS specifically for your React app
 app.use(cors({
-    origin: 'http://localhost:3000'
+    origin: 'http://localhost:4243'
 }));
 
 
@@ -39,12 +39,23 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (request, 
                 
                 // Determine subscription status
                 let status = 'inactive';
+                let planLevel = 'none';
+                
                 if (subscription.status === 'active' || subscription.status === 'trialing') {
                     status = 'active';
+                    // Get the plan level from the price ID
+                    const priceId = subscription.items.data[0].price.id;
+                    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) {
+                        planLevel = 'basic';
+                    } else if (priceId === process.env.STRIPE_PRO_PRICE_ID) {
+                        planLevel = 'pro';
+                    } else if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) {
+                        planLevel = 'enterprise';
+                    }
                 }
 
                 // Update user's subscription status in Firebase
-                await updateUserSubscriptionStatus(userId, status);
+                await updateUserSubscriptionStatus(userId, status, planLevel);
                 break;
 
             default:
@@ -137,7 +148,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 });
 
 // Helper function to update user subscription status in Firebase
-async function updateUserSubscriptionStatus(userId, status) {
+async function updateUserSubscriptionStatus(userId, status, planLevel) {
     try {
         const admin = require('firebase-admin');
         
@@ -152,10 +163,11 @@ async function updateUserSubscriptionStatus(userId, status) {
         const db = admin.firestore();
         await db.collection('users').doc(userId).update({
             subscriptionStatus: status,
+            planLevel: planLevel,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log(`✅ Updated subscription status for user ${userId} to ${status}`);
+        console.log(`✅ Updated subscription status for user ${userId} to ${status} with plan level ${planLevel}`);
     } catch (error) {
         console.error('Error updating user subscription status:', error);
         // Don't throw the error - we don't want to break the webhook response

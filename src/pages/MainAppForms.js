@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.js';
 import { doc, setDoc, getDoc, getFirestore } from 'firebase/firestore';
+import { formatJobTitleAndDate } from '../utils/jobFormatter';
 
 // Step Component
 const Step = ({ number, label, isActive, onClick }) => (
@@ -505,13 +506,13 @@ const DemographicsForm = ({ onNext }) => {
 /* Education Form */
 const EducationForm = ({ onNext }) => {
   const [educationEntries, setEducationEntries] = useState([
-    { school: '', degree: '', startDate: '', endDate: '', description: '' },
+    { school: '', degree: '', startDate: '', endDate: '', description: '', schoolCityState: '' },
   ]);
 
   const handleAddEntry = () => {
     setEducationEntries([
       ...educationEntries,
-      { school: '', degree: '', startDate: '', endDate: '', description: '' },
+      { school: '', degree: '', startDate: '', endDate: '', description: '', schoolCityState: '' },
     ]);
   };
 
@@ -543,6 +544,16 @@ const EducationForm = ({ onNext }) => {
                 placeholder="Enter school/university name"
                 value={entry.school}
                 onChange={(e) => handleChange(index, 'school', e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">City, State</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder="Enter city and state (e.g., Boston, MA)"
+                value={entry.schoolCityState}
+                onChange={(e) => handleChange(index, 'schoolCityState', e.target.value)}
               />
             </div>
             <div>
@@ -635,8 +646,14 @@ const WorkExperienceForm = ({ onNext }) => {
   };
 
   const handleSubmit = () => {
-    console.log('Work Experience Data:', experienceEntries);
-    onNext({ workExperience: experienceEntries });
+    // Format the entries with the new formatter
+    const formattedEntries = experienceEntries.map(entry => ({
+      ...entry,
+      formattedTitle: formatJobTitleAndDate(entry.position, entry.startDate, entry.endDate)
+    }));
+    
+    console.log('Work Experience Data:', formattedEntries);
+    onNext({ workExperience: formattedEntries });
   };
 
   return (
@@ -687,37 +704,37 @@ const WorkExperienceForm = ({ onNext }) => {
               <label className="block text-sm font-medium">Description</label>
               <textarea
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                placeholder="Describe your responsibilities"
+                placeholder="Enter job description"
                 value={entry.description}
                 onChange={(e) => handleChange(index, 'description', e.target.value)}
               />
             </div>
-            {experienceEntries.length > 1 && (
-              <button
-                type="button"
-                className="text-red-500"
-                onClick={() => handleRemoveEntry(index)}
-              >
-                Remove Entry
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => handleRemoveEntry(index)}
+              className="text-red-500 hover:text-red-700"
+            >
+              Remove Entry
+            </button>
           </div>
         ))}
         <button
           type="button"
-          className="text-blue-600"
           onClick={handleAddEntry}
+          className="text-blue-500 hover:text-blue-700"
         >
-          + Add Another Entry
+          + Add Another Position
         </button>
       </div>
-      <button
-        type="button"
-        className="mt-6 bg-blue-600 text-white py-2 rounded-lg font-medium"
-        onClick={handleSubmit}
-      >
-        Submit
-      </button>
+      <div className="mt-6">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Next
+        </button>
+      </div>
     </form>
   );
 };

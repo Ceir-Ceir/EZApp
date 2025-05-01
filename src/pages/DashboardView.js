@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { getDoc, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../services/firebase'; // Firebase configuration
+import { db } from '../services/firebase.js'; // Firebase configuration
 import { CSVLink } from 'react-csv'; // CSV Export
 import * as XLSX from 'xlsx'; // Excel Export
 import { getAuth } from 'firebase/auth';
-import { useAuth } from '../context/AuthContext';
-import { checkSubscriptionStatus } from '../services/stripe';
+import { useAuth } from '../context/AuthContext.js';
+import { checkSubscriptionStatus } from '../services/stripe.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileExcel } from '@fortawesome/free-solid-svg-icons';
 
@@ -148,7 +148,7 @@ const DashboardView = () => {
     setUserData({
       ...userData,
       education: [...userData.education,
-      { degree: "", school: "", startDate: "", endDate: "" }
+      { degree: "", school: "", startDate: "", endDate: "", schoolCityState: "" }
       ],
     });
   };
@@ -382,6 +382,15 @@ const DashboardView = () => {
                 />
                 <input
                   type="text"
+                  value={edu.schoolCityState}
+                  onChange={(e) =>
+                    handleEducationChange(index, "schoolCityState", e.target.value)
+                  }
+                  placeholder="City, State"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
+                />
+                <input
+                  type="text"
                   value={edu.startDate}
                   onChange={(e) =>
                     handleEducationChange(index, "startDate", e.target.value)
@@ -438,7 +447,7 @@ const DashboardView = () => {
                   <div>
                     <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
                     <p className="text-gray-600">
-                      {edu.school} | {edu.startDate} - {edu.endDate}
+                      {edu.school} | {edu.schoolCityState} | {edu.startDate} - {edu.endDate}
                     </p>
                   </div>
                   <button

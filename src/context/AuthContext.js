@@ -7,8 +7,8 @@ import {
     onAuthStateChanged
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../services/firebase';
-import { createSubscription } from '../services/stripe';
+import { auth, db } from '../services/firebase.js';
+import { createSubscription } from '../services/stripe.js';
 
 export const AuthContext = createContext();
 

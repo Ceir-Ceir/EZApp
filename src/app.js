@@ -1,16 +1,16 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import LandingPage from "./pages/LandingPage";
-import Login from "./pages/Login";
-import Signup from "./pages/SignupPage";
-import Subscribe from "./pages/Subscribe";
-import SubscriptionFlow from "./components/SubFlow";
-import MainApp from "./pages/MainApp";
-import DashboardView from "./pages/DashboardView";
-import JobSearch from "./pages/JobSearch";
-import MainAppForm from "./pages/MainAppForms";
-import SubscriptionStatus from "./pages/SubscriptionStatus";
+import { AuthProvider } from "./context/AuthContext.js";
+import LandingPage from "./pages/LandingPage.js";
+import Login from "./pages/Login.js";
+import Signup from "./pages/SignupPage.js";
+import Subscribe from "./pages/Subscribe.js";
+import SubFlow from "./components/SubFlow.js";
+import MainApp from "./pages/MainApp.js";
+import DashboardView from "./pages/DashboardView.js";
+import JobSearch from "./pages/JobSearch.js";
+import MainAppForm from "./pages/MainAppForms.js";
+import SubscriptionStatus from "./pages/SubscriptionStatus.js";
 
 function App() {
   return (
@@ -24,7 +24,7 @@ function App() {
 
           {/* Subscription Routes */}
           <Route path="/subscribe" element={<Subscribe />} />
-          <Route path="/subscription-flow" element={<SubscriptionFlow />} />
+          <Route path="/subscription-flow" element={<SubFlow />} />
           <Route path="/main-app-forms" element={<MainAppForm />} />
           <Route path="/subscription-status" element={<SubscriptionStatus />} />
 

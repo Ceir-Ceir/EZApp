@@ -1,7 +1,7 @@
 // src/components/SubFlow.js
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { createSubscription } from '../services/stripe';
+import { useAuth } from '../context/AuthContext.js';
+import { createSubscription } from '../services/stripe.js';
 
 // Define plans array
 const plans = [

@@ -1,7 +1,7 @@
 // src/pages/subscriptionStatus.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.js';
 import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 
 export default function SubscriptionStatus() {
