@@ -1,76 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from '../context/AuthContext.js';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
-
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 const Subscribe = () => {
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
-    const [plans, setPlans] = useState([]);
+    const [isStripeLoaded, setIsStripeLoaded] = useState(false);
     const [subscriptionStatus, setSubscriptionStatus] = useState(null);
     const [profileComplete, setProfileComplete] = useState(null);
 
-    const db = getFirestore(); // Initialize Firestore
+    const db = getFirestore();
 
     useEffect(() => {
         if (!currentUser) {
             navigate('/login');
         } else {
-            // Fetch subscription status from Firestore when the user is logged in
             fetchSubscriptionStatus();
         }
 
-        // Fetch plans (Optional: If you want dynamic plans)
-        fetch('http://localhost:4242/api/get-plans') // Update with your endpoint
-            .then((res) => res.json())
-            .then((data) => setPlans(data))
-            .catch((err) => {
-                console.error('Error fetching plans:', err);
-                setError('Failed to load plans.');
-            });
+        // Load Stripe pricing table script
+        const script = document.createElement('script');
+        script.src = 'https://js.stripe.com/v3/pricing-table.js';
+        script.async = true;
+        script.onload = () => setIsStripeLoaded(true);
+        document.head.appendChild(script);
+
+        return () => {
+            if (document.head.contains(script)) {
+                document.head.removeChild(script);
+            }
+        };
     }, [currentUser, navigate]);
-
-    const handleSubscribe = async (priceId) => {
-        try {
-            const stripe = await stripePromise;
-
-            const response = await fetch('http://localhost:4242/api/create-checkout-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    priceId,
-                    userId: currentUser?.uid,
-                    userEmail: currentUser?.email,
-                }),
-            });
-
-            const session = await response.json();
-
-            console.log("Session Response:", session);
-
-            if (!response.ok) {
-                console.error('Server error:', session);
-                throw new Error(session.error || 'Server error');
-            }
-    
-            if (session.error) {
-                console.error('Stripe error:', session.error);
-                throw new Error(session.error.message);
-            }
-
-            // Redirect to Stripe Checkout
-            await stripe.redirectToCheckout({ sessionId: session.id });
-        } catch (err) {
-            console.error('Error during subscription:', err.message);
-            setError('Something went wrong. Please try again.');
-        }
-    };
 
     // Fetch subscription status from Firestore based on current user's email
     const fetchSubscriptionStatus = async () => {
@@ -80,11 +42,11 @@ const Subscribe = () => {
                 const docSnap = await getDoc(userRef);
 
                 if (docSnap.exists()) {
-                    setSubscriptionStatus(docSnap.data().subscriptionStatus); // Set the status from Firestore
+                    setSubscriptionStatus(docSnap.data().subscriptionStatus);
                     setProfileComplete(docSnap.data().profileComplete);
                 } else {
                     console.error('No such document!');
-                    setSubscriptionStatus('inactive'); // Default to inactive if no status found
+                    setSubscriptionStatus('inactive');
                     setProfileComplete('false');
                 }
             }
@@ -94,17 +56,14 @@ const Subscribe = () => {
         }
     };
 
-
-
-        // Redirect if already subscribed
-        useEffect(() => {
-            if (subscriptionStatus === 'active' && profileComplete === true) {
-              navigate('/main-app/dashboard');
-            } else if (subscriptionStatus === 'active' && profileComplete !== true) {
-              navigate('/main-app-forms');
-            }
-          }, [subscriptionStatus, profileComplete, navigate]);
-          
+    // Redirect if already subscribed
+    useEffect(() => {
+        if (subscriptionStatus === 'active' && profileComplete === true) {
+            navigate('/main-app/dashboard');
+        } else if (subscriptionStatus === 'active' && profileComplete !== true) {
+            navigate('/main-app-forms');
+        }
+    }, [subscriptionStatus, profileComplete, navigate]);
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -126,20 +85,11 @@ const Subscribe = () => {
                     </div>
                 )}
 
-                <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {plans.map((plan) => (
-                        <div key={plan.id} className="border rounded-lg p-6 shadow-md">
-                            <h3 className="text-xl font-semibold">{plan.name}</h3>
-                            <p className="mt-4 text-gray-600">{plan.description}</p>
-                            <p className="mt-2 text-lg font-bold">{plan.price}</p>
-                            <button
-                                onClick={() => handleSubscribe(plan.id)}
-                                className="bg-blue-600 text-white mt-4 py-2 px-4 rounded-md"
-                            >
-                                Subscribe
-                            </button>
-                        </div>
-                    ))}
+                <div className="mt-12">
+                    <stripe-pricing-table 
+                        pricing-table-id="prctbl_1RK7aSK15hFjPN4iScgEWVz8"
+                        publishable-key="pk_live_51QJhxLK15hFjPN4ibtTTu9HLgdeMEGEnes4yuQoNFFOkJfwl5gAjMMrA9iZTYMGz1wjmQl95UxjRiyDQ8qVTnuFg00RZUi2wmK">
+                    </stripe-pricing-table>
                 </div>
             </div>
         </div>

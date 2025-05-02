@@ -328,26 +328,21 @@ const LandingPage = () => {
 
             {/* Pricing Section */}
             <div id="pricing" className="w-full py-24 px-4 bg-gray-50">
-            <div className="max-w-7xl mx-auto text-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-900 mb-4">Find the Perfect Plan for You</h2>
-                <p className="text-gray-600 text-lg">
-                Wherever you are in your job search, we have a plan that suits your needs.
-                </p>
-            </div>
-            <div className="max-w-7xl mx-auto">
-                <div
-                dangerouslySetInnerHTML={{
-                    __html: `
-                    <stripe-pricing-table 
-                        pricing-table-id="prctbl_1QKsvxK15hFjPN4iIj6XoBYS"
-                        publishable-key="pk_test_51QJhxLK15hFjPN4iALvmbUuaKxuNE3pthjbKBxNmKO5nrOxXNxgDs5KPxPSrCebcRL59697NZppmi2RTprQCibl000uyb5mhWP">
-                    </stripe-pricing-table>
-                    `,
-                }}
-                />
-            </div>
-            </div>
+                <div className="max-w-7xl mx-auto text-center mb-12">
+                    <h2 className="text-4xl font-bold text-gray-900 mb-4">Find the Perfect Plan for You</h2>
+                    <p className="text-gray-600 text-lg">
+                        Wherever you are in your job search, we have a plan that suits your needs.
+                    </p>
+                </div>
 
+                {/* Pricing Table */}
+                <div className="max-w-7xl mx-auto">
+                    <stripe-pricing-table 
+                        pricing-table-id="prctbl_1RK7aSK15hFjPN4iScgEWVz8"
+                        publishable-key="pk_live_51QJhxLK15hFjPN4ibtTTu9HLgdeMEGEnes4yuQoNFFOkJfwl5gAjMMrA9iZTYMGz1wjmQl95UxjRiyDQ8qVTnuFg00RZUi2wmK">
+                    </stripe-pricing-table>
+                </div>
+            </div>
 
             {/* Footer */}
             <footer className="w-full bg-gray-50 px-8 py-6 border-t border-gray-200">

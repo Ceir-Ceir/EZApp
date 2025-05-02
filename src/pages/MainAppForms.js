@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { doc, setDoc, getDoc, getFirestore } from 'firebase/firestore';
-import { formatJobTitleAndDate } from '../utils/jobFormatter';
+import { formatJobTitleAndDate } from '../utils/jobFormatter.js';
 
 // Step Component
 const Step = ({ number, label, isActive, onClick }) => (

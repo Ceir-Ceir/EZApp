@@ -26,7 +26,7 @@ export async function createSubscription(userId, priceId) {
         const userData = userSnap.data();
 
         // Call your backend API to create a session
-        const response = await fetch('http://localhost:4242/api/create-session-checkout', {
+        const response = await fetch('https://us-central1-ezapp-91d8e.cloudfunctions.net/api/api/create-session-checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

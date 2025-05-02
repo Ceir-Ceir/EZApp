@@ -6,9 +6,16 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-// Enable CORS specifically for your React app
+// Enable CORS for both development and production
 app.use(cors({
-    origin: 'http://localhost:4243'
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:4243',
+        'https://ezapp-91d8e.web.app',
+        'https://ezapp-91d8e.firebaseapp.com'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
 }));
 
 
@@ -193,14 +200,6 @@ app.get('/api/stripe-subscription', async (req, res) => {
     }
   });
 
-// Force port 4242 for Stripe webhook testing
-const PORT = process.env.PORT || 4242;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`⭐ Webhook endpoint ready at http://localhost:${PORT}/api/webhook`);
-    console.log(`🔔 Checkout endpoint ready at http://localhost:${PORT}/api/create-checkout-session`);
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server Error:', err);
@@ -214,3 +213,6 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
     res.status(404).json({ error: 'Not Found' });
 });
+
+// Export the app instead of starting the server
+module.exports = app;

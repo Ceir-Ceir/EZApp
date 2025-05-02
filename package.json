@@ -8,7 +8,10 @@
     "build": "react-scripts build",
     "server": "node server/server.js",
     "dev": "concurrently \"npm run start\" \"npm run server\"",
-    "build:css": "tailwindcss -i ./src/styles.css -o ./dist/styles.css --watch"
+    "build:css": "tailwindcss -i ./src/styles.css -o ./dist/styles.css --watch",
+    "build:all": "npm run build && npm run build:css",
+    "deploy": "npm run build:all && firebase deploy",
+    "start:prod": "concurrently \"serve -s build\" \"npm run server\""
   },
   "keywords": [],
   "author": "",
@@ -17,8 +20,10 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "autoprefixer": "^10.4.20",
     "concurrently": "^8.2.2",
+    "eslint-config-google": "^0.14.0",
     "nodemon": "^3.0.2",
     "postcss": "^8.4.31",
+    "serve": "^14.2.4",
     "tailwindcss": "^3.4.1"
   },
   "dependencies": {

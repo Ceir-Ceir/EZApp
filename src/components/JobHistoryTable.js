@@ -1,5 +1,5 @@
 import React from 'react';
-import { createJobTable } from '../utils/jobFormatter';
+import { createJobTable } from '../utils/jobFormatter.js';
 
 const JobHistoryTable = ({ jobs }) => {
   if (!jobs || jobs.length === 0) {
