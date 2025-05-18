@@ -4,11 +4,13 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    signInWithPopup,
+    GoogleAuthProvider
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../services/firebase.js';
-import { createSubscription } from '../services/stripe.js';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const AuthContext = createContext();
 
@@ -19,35 +21,118 @@ export function useAuth() {
 export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+    
+    // React Router hooks
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    async function signup(email, password, priceId) {
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            setCurrentUser(user);
+            setLoading(false);
+
+            if (user) {
+                // Set up subscription status listener
+                const userRef = doc(db, 'Users', user.uid);
+                const unsubscribeSubscription = onSnapshot(userRef, (doc) => {
+                    if (doc.exists()) {
+                        const userData = doc.data();
+                        console.log('Firebase document updated:', userData);
+                        
+                        setSubscriptionStatus(userData.subscriptionStatus);
+                        
+                        // Handle subscription status changes - only redirect if PAID subscription
+                        if (userData.subscriptionStatus === 'active' && 
+                            location.pathname === '/subscription-status') {
+                            console.log('Navigating to main-app-forms due to active subscription');
+                            try {
+                                navigate('/main-app-forms');
+                            } catch (error) {
+                                console.error('Navigation error:', error);
+                                // Fallback to direct navigation
+                                window.location.href = '/main-app-forms';
+                            }
+                        }
+                    }
+                });
+
+                // Cleanup subscription listener when auth state changes
+                return () => unsubscribeSubscription();
+            } else {
+                setSubscriptionStatus(null);
+            }
+        });
+
+        return unsubscribe;
+    }, [navigate, location.pathname, subscriptionStatus]);
+
+    const signup = async (email, password, priceId = null, provider = 'email') => {
         try {
-            // Step 1: Create user with email and password
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            let userCredential;
+            
+            if (provider === 'google') {
+                const googleProvider = new GoogleAuthProvider();
+                userCredential = await signInWithPopup(auth, googleProvider);
+            } else {
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            }
 
-            const userId = userCredential.user.uid;
-            console.log("User created with UID: ", userId);
-
-            // Step 2: Save user information in Firestore with 'inactive' subscription status
-            await setDoc(doc(db, 'Users', userId), {
-                email,
-                createdAt: new Date().toISOString(),
-                subscriptionStatus: 'inactive'
+            const user = userCredential.user;
+            
+            // Save user data to Firestore
+            await setDoc(doc(db, 'Users', user.uid), {
+                email: user.email,
+                createdAt: new Date(),
+                subscriptionStatus: 'inactive',
+                profileComplete: false
             });
 
-            // Step 3: Create a Stripe subscription for the user
-            await createSubscription(userId, priceId);
+            // If a price ID was provided, create a subscription
+            if (priceId) {
+                try {
+                    console.log('Creating checkout session with:', {
+                        priceId,
+                        userId: user.uid,
+                        userEmail: user.email
+                    });
+                    
+                    const apiUrl = process.env.REACT_APP_API_URL || 'https://us-central1-ezapp-91d8e.cloudfunctions.net/api';
+                    console.log('Using API URL:', apiUrl);
+                    
+                    const response = await fetch(`${apiUrl}/api/create-checkout-session`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            priceId,
+                            userId: user.uid,
+                            userEmail: user.email
+                        }),
+                    });
 
-            // Redirect to a waiting page while payment is being processed
-            return userCredential.user;
+                    const session = await response.json();
+                    console.log('Received checkout session:', session);
+                    
+                    if (session.url) {
+                        console.log('Redirecting to checkout URL:', session.url);
+                        window.location.href = session.url;
+                    } else {
+                        throw new Error('Failed to create checkout session');
+                    }
+                } catch (error) {
+                    console.error('Error creating subscription:', error);
+                    // Don't throw here, as the user is already created
+                }
+            }
+
+            return userCredential;
         } catch (error) {
-            const errorMessage = error.code === 'auth/email-already-in-use'
-                ? 'This email is already in use. Please log in or reset your password.'
-                : 'Signup failed. Please try again.';
-            console.error(error.message);
-            throw new Error(errorMessage);
+            console.error('Signup error:', error);
+            throw error;
         }
-    }
+    };
 
     async function login(email, password) {
         return signInWithEmailAndPassword(auth, email, password);
@@ -70,37 +155,14 @@ export function AuthProvider({ children }) {
         }
     }
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          try {
-
-            console.log("Setting up onAuthStateChanged listener...");
-            if (user) {
-                
-                console.log("User data:", user.uid); 
-              const subscriptionStatus = await getUserSubscriptionStatus(user.uid);
-              setCurrentUser({ ...user, subscriptionStatus });
-            } else {
-            console.log("No user is signed in.");
-              setCurrentUser(null);
-            }
-          } catch (error) {
-            console.error('Auth state change error:', error);
-          } finally {
-            setLoading(false);
-          }
-        });
-      
-        return () => unsubscribe();
-      }, []);
-      
-
     const value = {
         currentUser,
+        subscriptionStatus,
         signup,
         login,
         logout,
-        getUserSubscriptionStatus
+        getUserSubscriptionStatus,
+        loading
     };
 
     return (

@@ -14,30 +14,27 @@ import SubscriptionStatus from "./pages/SubscriptionStatus.js";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-
           {/* Subscription Routes */}
           <Route path="/subscribe" element={<Subscribe />} />
           <Route path="/subscription-flow" element={<SubFlow />} />
           <Route path="/main-app-forms" element={<MainAppForm />} />
           <Route path="/subscription-status" element={<SubscriptionStatus />} />
-
           {/* Main App with Nested Routes */}
           <Route path="/main-app" element={<MainApp />}>
             <Route index element={<MainAppForm />} />
             <Route path="dashboard" element={<DashboardView />} />
             <Route path="job-search" element={<JobSearch />} />
-           
           </Route>
         </Routes>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

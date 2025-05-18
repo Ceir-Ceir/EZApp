@@ -377,10 +377,12 @@ const salaryRangeOptions = [ // salary range options here
 ];
 
 const JobSearch = () => {
-  const [activeStep, setActiveStep] = useState(1); // Tracks the current step
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [buttonText, setButtonText] = useState('Save & Find Jobs');
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
   const [panesVisible, setPanesVisible] = useState(true);
   const [jobPreferences, setJobPreferences] = useState({
-
     jobTitle: "",
     industry: "",
     employmentType: "",
@@ -413,7 +415,7 @@ const JobSearch = () => {
       links: "",
     });
     setFilteredJobs([]); // Clear filtered jobs
-    setActiveStep(1); // Reset to the first step
+    setCurrentStep(1); // Reset to the first step
     setPanesVisible(true);
   };
 
@@ -729,82 +731,58 @@ const JobSearch = () => {
     return { min: null, max: null };
   }
 
-  const handleSubmit = () => {
-    // Ensure filteredJobs is updated with the filtered result
-    const filtered = filterJobs();
-    console.log(filtered);
-    setFilteredJobs(filtered);
-
-    // Hide the form fields after submission
-    setActiveStep(4);
-    setPanesVisible(false);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setIsButtonClicked(true);
+    setButtonText('Finding Jobs...');
+    
+    // Simulate a delay to show the loading state
+    setTimeout(() => {
+      setButtonText('Jobs Search Started!');
+      setIsSubmitting(false);
+    }, 2000);
   };
 
   const JobPreferencesForm = ({ jobPreferences, setJobPreferences }) => {
     return (
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Job Preferences</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Job Title</label>
           <Select
+            value={jobPreferences.jobTitle ? { value: jobPreferences.jobTitle, label: jobPreferences.jobTitle } : null}
+            onChange={(selected) => setJobPreferences({ ...jobPreferences, jobTitle: selected ? selected.value : '' })}
             options={jobOptions}
-            value={jobPreferences.jobTitle}
-            onChange={(selectedOption) => {
-              // Assuming selectedOption is an object with label and value
-              const selectedValue = selectedOption ? selectedOption.value : '';
-              setJobPreferences({ ...jobPreferences, jobTitle: selectedValue });
-            }}
-            placeholder="Select Job Title"
-            isSearchable
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="mt-1"
+            placeholder="Select a job title"
+            isClearable
           />
-
-          <Select
-            options={industryOptions}
-            value={industryOptions.find(option => option.value === jobPreferences.industry)} // Set selected industry
-            onChange={(selectedOption) =>
-              setJobPreferences({ ...jobPreferences, industry: selectedOption.value }) // Update industry in preferences
-            }
-            placeholder="Select Preferred Industry"
-            isSearchable
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          />
-          <select
-            value={jobPreferences.employmentType}
-            onChange={(e) => setJobPreferences({ ...jobPreferences, employmentType: e.target.value })}
-            className="border border-gray-300 rounded-lg px-4 py-2"
-          >
-            <option value="" disabled>
-              Employment Type
-            </option>
-            <option value="Full-Time">Full-Time</option>
-            <option value="Part-Time">Part-Time</option>
-            <option value="Contract">Contract</option>
-          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Preferred Location</label>
           <input
             type="text"
-            placeholder="Preferred Location"
             value={jobPreferences.location}
             onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
-            className="border border-gray-300 rounded-lg px-4 py-2"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Enter preferred location"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Salary Range</label>
           <Select
-            options={salaryRangeOptions}
-            value={salaryRangeOptions.find(option =>
-              option.value === `${jobPreferences.salaryExpectation.min / 1000}-${jobPreferences.salaryExpectation.max / 1000 || "150k+"}`
-            )}
-            onChange={(selectedOption) => {
-              // Log the selected option
-              console.log("Selected Salary Range:", selectedOption);
-
-              // Parse and set the salaryExpectation in the state
-              setJobPreferences({
-                ...jobPreferences,
-                salaryExpectation: parseRange(selectedOption),
-              });
-            }}
-            placeholder="Select Salary Range"
-            isSearchable
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            value={jobPreferences.salaryRange ? { value: jobPreferences.salaryRange, label: jobPreferences.salaryRange } : null}
+            onChange={(selected) => setJobPreferences({ ...jobPreferences, salaryRange: selected ? selected.value : '' })}
+            options={[
+              { value: "0-50000", label: "$0 - $50,000" },
+              { value: "50000-100000", label: "$50,000 - $100,000" },
+              { value: "100000-150000", label: "$100,000 - $150,000" },
+              { value: "150000-200000", label: "$150,000 - $200,000" },
+              { value: "200000+", label: "$200,000+" }
+            ]}
+            className="mt-1"
+            placeholder="Select salary range"
+            isClearable
           />
         </div>
       </div>
@@ -813,178 +791,155 @@ const JobSearch = () => {
 
   const SkillsAndSoftwareForm = ({ skills, setSkills, software, setSoftware, handleAddSoftware, handleRemoveSoftware }) => {
     return (
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Skills</h2>
-        {/* Skills Input */}
-        <div className="skills-input">
-          <input
-            type="text"
-            placeholder="Press Enter to add skills"
-            onKeyDown={handleAddSkill}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6"
-          />
-          <div className="tags">
-            {skills.map((skill, index) => (
-              <div
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Skills</label>
+          <div className="mt-1">
+            <input
+              type="text"
+              value={skills.newSkill}
+              onChange={(e) => setSkills({ ...skills, newSkill: e.target.value })}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddSkill(e);
+                }
+              }}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Type a skill and press Enter"
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {skills.list.map((skill, index) => (
+              <span
                 key={index}
-                className="tag"
-                onClick={() => handleRemoveSkill(skill)}
-                style={{ display: "inline-block", margin: "5px", padding: "5px", backgroundColor: "#e0e0e0", borderRadius: "12px" }}
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
               >
-                {skill} <span style={{ marginLeft: "8px", cursor: "pointer" }}>x</span>
-              </div>
+                {skill}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSkill(skill)}
+                  className="ml-2 inline-flex items-center p-0.5 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
+                >
+                  <span className="sr-only">Remove skill</span>
+                  ×
+                </button>
+              </span>
             ))}
           </div>
         </div>
-        <h2 className="text-xl font-semibold mb-4">Software/Tools</h2>
-        {software.map((entry, index) => (
-          <div key={index} className="flex gap-4 mb-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Software and Tools</label>
+          <div className="mt-1">
             <input
               type="text"
-              placeholder="Software/Tool"
-              value={entry.tool}
-              onChange={(e) =>
-                setSoftware((prevSoftware) =>
-                  prevSoftware.map((item, i) => (i === index ? { ...item, tool: e.target.value } : item))
-                )
-              }
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
+              value={software.newSoftware}
+              onChange={(e) => setSoftware({ ...software, newSoftware: e.target.value })}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddSoftware();
+                }
+              }}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Type a software/tool and press Enter"
             />
-            <select
-              value={entry.proficiency}
-              onChange={(e) =>
-                setSoftware(software.map((item, i) => (i === index ? { ...item, proficiency: e.target.value } : item)))
-              }
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
-            >
-              <option value="" disabled>
-                Proficiency Level
-              </option>
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
-            <button onClick={() => handleRemoveSoftware(index)} className="text-red-500 hover:underline">
-              Remove
-            </button>
           </div>
-        ))}
-        <button onClick={handleAddSoftware} className="text-blue-600 hover:underline">
-          + Add Software/Tool
-        </button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {software.list.map((item, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+              >
+                {item}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSoftware(index)}
+                  className="ml-2 inline-flex items-center p-0.5 rounded-full text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none"
+                >
+                  <span className="sr-only">Remove software</span>
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     );
   };
 
   const AdditionalInfoForm = ({ additionalInfo, setAdditionalInfo, handleAddCertification, handleRemoveCertification }) => {
     return (
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
-        {additionalInfo.certifications.map((cert, index) => (
-          <div key={index} className="mb-4">
-            <input
-              type="text"
-              placeholder="Certification"
-              value={cert.name}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, name: e.target.value } : item
-                  ),
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Organization"
-              value={cert.organization}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, organization: e.target.value } : item
-                  ),
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Issue Date"
-              value={cert.issueDate}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, issueDate: e.target.value } : item
-                  ),
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Expiration Date"
-              value={cert.expirationDate}
-              onChange={(e) =>
-                setAdditionalInfo({
-                  ...additionalInfo,
-                  certifications: additionalInfo.certifications.map((item, i) =>
-                    i === index ? { ...item, expirationDate: e.target.value } : item
-                  ),
-                })
-              }
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Certifications</label>
+          <div className="mt-1 space-y-4">
+            {additionalInfo.certifications.map((cert, index) => (
+              <div key={index} className="flex gap-4 items-start">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={cert.organization}
+                    onChange={(e) => {
+                      const newCerts = [...additionalInfo.certifications];
+                      newCerts[index] = { ...newCerts[index], organization: e.target.value };
+                      setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
+                    }}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Certification Organization"
+                  />
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={cert.issueDate}
+                    onChange={(e) => {
+                      const newCerts = [...additionalInfo.certifications];
+                      newCerts[index] = { ...newCerts[index], issueDate: e.target.value };
+                      setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
+                    }}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Issue Date"
+                  />
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={cert.relevantLink}
+                    onChange={(e) => {
+                      const newCerts = [...additionalInfo.certifications];
+                      newCerts[index] = { ...newCerts[index], relevantLink: e.target.value };
+                      setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
+                    }}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Relevant Link"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCertification(index)}
+                  className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <span className="sr-only">Remove certification</span>
+                  ×
+                </button>
+              </div>
+            ))}
             <button
-              onClick={() => handleRemoveCertification(index)}
-              className="text-red-500 hover:underline mt-2"
+              type="button"
+              onClick={handleAddCertification}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Remove
+              Add Certification
             </button>
           </div>
-        ))}
-        <button onClick={handleAddCertification} className="text-blue-600 hover:underline mb-4">
-          + Add Certification
-        </button>
-        <h2 className="text-xl font-semibold mb-4">Open to Relocation?</h2>
-        <div className="flex items-center gap-4">
-          <label>
-            <input
-              type="radio"
-              name="relocation"
-              value="Yes"
-              checked={additionalInfo.willingToRelocate === "Yes"}
-              onChange={(e) => setAdditionalInfo({ ...additionalInfo, willingToRelocate: e.target.value })}
-              className="mr-2"
-            /> Yes
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="relocation"
-              value="No"
-              checked={additionalInfo.willingToRelocate === "No"}
-              onChange={(e) => setAdditionalInfo({ ...additionalInfo, willingToRelocate: e.target.value })}
-              className="mr-2"
-            /> No
-          </label>
         </div>
-        <h2 className="text-xl font-semibold mb-4 mt-6">Relevant Links</h2>
-        <textarea
-          placeholder="Enter any relevant links (e.g., portfolio, LinkedIn)"
-          value={additionalInfo.links}
-          onChange={(e) => setAdditionalInfo({ ...additionalInfo, links: e.target.value })}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2"
-        />
       </div>
     );
   };
 
-  const renderForm = () => {
-    switch (activeStep) {
+  const renderStep = () => {
+    switch (currentStep) {
       case 1:
         return <JobPreferencesForm jobPreferences={jobPreferences} setJobPreferences={setJobPreferences} />;
       case 2:
@@ -997,210 +952,60 @@ const JobSearch = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-6">
-      {/* Left Panel: Steps Navigation */}
-      {panesVisible && (
-        <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Tell Us About Your Dream Job</h2>
-          <ul className="space-y-4">
-            <li
-              className={`cursor-pointer ${activeStep === 1 ? "text-blue-600 font-bold" : "text-gray-600"
-                }`}
-              onClick={() => setActiveStep(1)}
-            >
-              1. Job Preferences
-            </li>
-            <li
-              className={`cursor-pointer ${activeStep === 2 ? "text-blue-600 font-bold" : "text-gray-600"
-                }`}
-              onClick={() => setActiveStep(2)}
-            >
-              2. Skills
-            </li>
-            <li
-              className={`cursor-pointer ${activeStep === 3 ? "text-blue-600 font-bold" : "text-gray-600"
-                }`}
-              onClick={() => setActiveStep(3)}
-            >
-              3. Additional Information
-            </li>
-          </ul>
-
-        </div>
-      )}
-
-      {/* Right Panel: Form Content */}
-      {panesVisible && (
-        <div className="w-full md:w-2/3 bg-white rounded-lg shadow-md p-6">
-          {activeStep !== 4 && renderForm()}
-          {/* Submit Button */}
-          <div className="mt-4 flex justify-end gap-4">
-            {activeStep > 1 && (
-              <button
-                onClick={() => setActiveStep(activeStep - 1)}
-                className="px-6 py-2 bg-gray-300 text-white rounded-md"
-              >
-                Back
-              </button>
-            )}
-            {activeStep < 3 ? (
-              <button
-                onClick={() => setActiveStep(activeStep + 1)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md"
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit} // Call the handleSubmit function
-                className="px-6 py-2 bg-green-600 text-white rounded-md"
-              >
-                Submit
-              </button>
-            )}
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Job Search Preferences</h2>
+            <p className="text-gray-600">Tell us about your ideal job and we'll help you find it.</p>
           </div>
-        </div>
-      )}
 
-      {/* Display submitted search fields and values */}
-      {activeStep === 4 && (
-  <div className="w-full bg-white rounded-lg shadow-md p-6">
-    <h3 className="text-xl font-semibold">Your Search Criteria</h3>
-
-    {/* Job Title */}
-    {jobPreferences.jobTitle?.length > 0 && (
-      <div className="my-4">
-        <p><strong>Job Title: </strong> {jobPreferences.jobTitle}</p>
-      </div>
-    )}
-
-    {/* Industry */}
-    {jobPreferences.industry?.length > 0 && (
-      <div className="my-4">
-        <p><strong>Industry: </strong> {jobPreferences.industry}</p>
-      </div>
-    )}
-
-    {/* Employment Type */}
-    {jobPreferences.employmentType?.length > 0 && (
-      <div className="my-4">
-        <p><strong>Employment Type: </strong> {jobPreferences.employmentType}</p>
-      </div>
-    )}
-
-    {/* Location */}
-    {jobPreferences.location.length > 0 && (
-      <div className="my-4">
-        <p><strong>Location: </strong> {jobPreferences.location}</p>
-      </div>
-    )}
-
-    {/* Salary Range */}
-    {(jobPreferences.salaryExpectation.min || jobPreferences.salaryExpectation.max) && (
-      <div className="my-4">
-        <p><strong>Salary Range: </strong>
-          {jobPreferences.salaryExpectation.min
-            ? `$${jobPreferences.salaryExpectation.min.toLocaleString()}`
-            : "Min Not Selected"}{" "}
-          -{" "}
-          {jobPreferences.salaryExpectation.max
-            ? `$${jobPreferences.salaryExpectation.max.toLocaleString()}`
-            : "Max Not Selected"}
-        </p>
-      </div>
-    )}
-
-    {/* Skills */}
-    {skills.length > 0 && (
-      <div className="my-4">
-        <strong>Skills: </strong>
-        {skills.map((skill, index) => (
-          <span key={index}>
-            {skill}{index < skills.length - 1 && ', '}&nbsp;
-          </span>
-        ))}
-      </div>
-    )}
-
-    {/* Software */}
-    {software.filter(s => s.tool && s.proficiency).length > 0 && (
-      <div className="my-4">
-        <p><strong>Software: </strong>
-        {software.filter(s => s.tool && s.proficiency).map((s, idx) => (
-            <span key={idx}>{`${s.tool} (${s.proficiency})`}</span>
-          ))}
-        </p>
-      </div>
-    )}
-
-    {/* Certifications */}
-    {additionalInfo.certifications?.filter(cert => cert.name && cert.organization).length > 0 && (
-      <div className="my-4">
-        <p><strong>Certifications: </strong>
-        {additionalInfo.certifications?.filter(cert => cert.name && cert.organization).map((cert, idx) => (
-            <span key={idx}>{`${cert.name} - ${cert.organization}`}</span>
-          ))}
-        </p>
-      </div>
-    )}
-
-    {/* Willing to Relocate */}
-    {additionalInfo.willingToRelocate?.length > 0 &&  (
-      <div className="my-4">
-        <p><strong>Willing to Relocate: </strong> {additionalInfo.willingToRelocate}</p>
-      </div>
-    )}
-
-    {/* Links */}
-    {additionalInfo.links?.length > 0 && (
-      <div className="my-4">
-        <p><strong>Links: </strong> {additionalInfo.links}</p>
-      </div>
-    )}
-
-    {/* Reset Filters Button */}
-    <div className="my-4">
-      <button
-        onClick={resetFilters}
-        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-      >
-        Reset Filters
-      </button>
-    </div>
-  </div>
-)}
-
-
-      {/* Display filtered jobs */}
-      {!panesVisible && filteredJobs && Array.isArray(filteredJobs) && filteredJobs.length > 0 ? (
-        <div className="w-full bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold">Filtered Jobs</h3>
-          <ul className="list-disc mt-4">
-            {filteredJobs.map((job, index) => (
-              <li key={index} className="py-3">
-                <div>
-                  {/* Accessing label or value for each property */}
-                  <strong>{job.title?.label || job.title || ''}</strong> - {job.company.label || job.company || ''}<br />
-                  {job.description?.label || job.description || ''}<br />
-                  <p><strong>Location: </strong>{job.location?.label || job.location || ''}<br />
-                    <strong>Salary: </strong>{job.salary?.value || job.salary || ''}</p>
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {step}
+                  </div>
+                  {step < 3 && (
+                    <div
+                      className={`w-24 h-1 ${
+                        currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    />
+                  )}
                 </div>
-              </li>
-
-            ))}
-          </ul>
-        </div>
-      ) : (
-        !panesVisible && (
-          <div className="w-full bg-white rounded-lg shadow-md p-6">
-            <p className="text-xl font-semibold text-gray-600">No jobs found</p>
+              ))}
+            </div>
           </div>
-        )
-      )}
 
+          <form onSubmit={handleSubmit}>
+            {renderStep()}
 
+            {currentStep === 3 && (
+              <div className="mt-8 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 ${
+                    isButtonClicked
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {buttonText}
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
     </div>
   );
+};
 
-}
 export default JobSearch;

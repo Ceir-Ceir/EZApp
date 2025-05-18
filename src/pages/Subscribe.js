@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { loadStripe } from '@stripe/stripe-js';
 
 const Subscribe = () => {
     const { currentUser, logout } = useAuth();
@@ -24,15 +25,68 @@ const Subscribe = () => {
         const script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/pricing-table.js';
         script.async = true;
-        script.onload = () => setIsStripeLoaded(true);
+        script.onload = () => {
+            setIsStripeLoaded(true);
+            // Add event listener for pricing table clicks
+            document.addEventListener('stripe-pricing-table-click', handlePricingTableClick);
+        };
         document.head.appendChild(script);
 
         return () => {
             if (document.head.contains(script)) {
                 document.head.removeChild(script);
             }
+            document.removeEventListener('stripe-pricing-table-click', handlePricingTableClick);
         };
     }, [currentUser, navigate]);
+
+    // In your handlePricingTableClick function
+const handlePricingTableClick = async (event) => {
+    console.log('Pricing table clicked:', event.detail);
+    
+    if (!currentUser) {
+        // Store the selected price ID in session storage
+        sessionStorage.setItem('selectedPriceId', event.detail.priceId);
+        // Redirect to signup
+        navigate('/signup');
+        return;
+    }
+
+    // User is already logged in, create checkout session
+    try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://us-central1-ezapp-91d8e.cloudfunctions.net/api';
+        console.log('Creating checkout session for logged-in user:', {
+            priceId: event.detail.priceId,
+            userId: currentUser.uid,
+            userEmail: currentUser.email
+        });
+        
+        const response = await fetch(`${apiUrl}/api/create-checkout-session`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                priceId: event.detail.priceId,
+                userId: currentUser.uid,
+                userEmail: currentUser.email
+            }),
+        });
+
+        const session = await response.json();
+        console.log('Checkout session created:', session);
+        
+        if (session.url) {
+            console.log('Redirecting to Stripe checkout:', session.url);
+            window.location.href = session.url;
+        } else {
+            throw new Error('Failed to create checkout session');
+        }
+    } catch (error) {
+        console.error('Error creating checkout session:', error);
+        setError('Failed to create checkout session. Please try again.');
+    }
+};
 
     // Fetch subscription status from Firestore based on current user's email
     const fetchSubscriptionStatus = async () => {

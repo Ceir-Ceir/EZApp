@@ -8,6 +8,8 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 export async function createSubscription(userId, priceId) {
     try {
+        console.log('Creating subscription for user:', userId, 'with price:', priceId);
+        
         const stripe = await stripePromise;
 
         // Validate Stripe object
@@ -24,19 +26,26 @@ export async function createSubscription(userId, priceId) {
         }
 
         const userData = userSnap.data();
+        console.log('User data retrieved:', userData);
 
         // Call your backend API to create a session
-        const response = await fetch('https://us-central1-ezapp-91d8e.cloudfunctions.net/api/api/create-session-checkout', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/create-checkout-session`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId,
                 priceId,
-                email: userData.email,
+                userEmail: userData.email,
             }),
         });
 
-        const { sessionId } = await response.json();
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create checkout session');
+        }
+
+        const { sessionId, url } = await response.json();
+        console.log('Checkout session created:', { sessionId, url });
 
         // Redirect to Stripe Checkout
         const { error } = await stripe.redirectToCheckout({
@@ -44,6 +53,7 @@ export async function createSubscription(userId, priceId) {
         });
 
         if (error) {
+            console.error('Stripe redirect error:', error);
             throw new Error(error.message);
         }
         
@@ -56,7 +66,7 @@ export async function createSubscription(userId, priceId) {
 // Update the subscription status in Firestore
 export const updateUserSubscriptionStatus = async (userId, status, planLevel) => {
     try {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(db, 'Users', userId);
         await updateDoc(userRef, {
             subscriptionStatus: status,
             planLevel: planLevel,

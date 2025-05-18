@@ -6,6 +6,8 @@ const JobHistoryTable = ({ jobs }) => {
     return <p>No work experience to display</p>;
   }
 
+  const formattedJobs = createJobTable(jobs);
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-300">
@@ -20,13 +22,13 @@ const JobHistoryTable = ({ jobs }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {jobs.map((job, index) => (
+          {formattedJobs.map((job, index) => (
             <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {job.position}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {job.formattedTitle.split(' — ')[1]}
+                {job.dateRange}
               </td>
             </tr>
           ))}

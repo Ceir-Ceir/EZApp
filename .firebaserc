@@ -1,5 +1,24 @@
 {
   "projects": {
-    "default": "ezapp-91d8e"
-  }
+    "default": "ezapp-91d8e",
+    "prod": "ezapp-91d8e"
+  },
+  "targets": {
+    "ezapp-91d8e": {
+      "hosting": {
+        "prod": [
+          "ezapp-91d8e"
+        ]
+      },
+      "run": {
+        "api": [
+          "ezapp-api"
+        ],
+        "automation": [
+          "ezapp-automation"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

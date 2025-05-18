@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth, db } from '../services/firebase.js'; 
-import { doc, setDoc } from 'firebase/firestore';
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -18,68 +15,82 @@ const Signup = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (currentUser) {
-            navigate('/subscribe');
+            // Check if there's a pending subscription
+            const subscriptionStatus = sessionStorage.getItem('subscriptionStatus');
+            if (subscriptionStatus === 'success') {
+                // Clear the stored status
+                sessionStorage.removeItem('subscriptionStatus');
+                // Navigate to subscription status to complete the process
+                navigate('/subscription-status?status=success');
+            } else {
+                navigate('/subscribe');
+            }
         }
     }, [currentUser, navigate]);
 
     // Handle Email/Password Signup
-    const handleEmailSignup = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        // Validate passwords match
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            setLoading(false);
-            return;
-        }
-
         try {
-            const userCredential = await signup(email, password);
-            const user = userCredential.user;
-
-            // Save user data to Firestore
-            await setDoc(doc(db, 'Users', user.uid), {
-                email: user.email,
-                createdAt: new Date(),
-                subscriptionStatus: 'free',
-            });
-
-            navigate('/subscribe');
+            setError('');
+            setLoading(true);
+            
+            // Get the stored price ID from session storage
+            const priceId = sessionStorage.getItem('selectedPriceId');
+            
+            // Sign up the user with the price ID if it exists
+            await signup(email, password, priceId);
+            
+            // Clear the stored price ID
+            sessionStorage.removeItem('selectedPriceId');
+            
+            // Check if there's a pending subscription
+            const subscriptionStatus = sessionStorage.getItem('subscriptionStatus');
+            if (subscriptionStatus === 'success') {
+                // Clear the stored status
+                sessionStorage.removeItem('subscriptionStatus');
+                // Navigate to subscription status to complete the process
+                navigate('/subscription-status?status=success');
+            } else {
+                // Navigate to subscription status page
+                navigate('/subscription-status');
+            }
         } catch (error) {
-            console.error(error);
-            setError(error.message || 'Failed to create account');
-        } finally {
-            setLoading(false);
+            setError('Failed to create an account: ' + error.message);
         }
+        setLoading(false);
     };
 
     // Handle Google Signup
     const handleGoogleSignup = async () => {
-        setLoading(true);
-        setError('');
-    
         try {
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            console.log('Google Sign-In Success:', result.user); // Log user details
-            const user = result.user;
-
-            // Save or update user data in Firestore
-            await setDoc(doc(db, 'Users', user.uid), {
-                email: user.email,
-                createdAt: new Date(),
-                subscriptionStatus: 'free',
-            }, { merge: true });
-
-            navigate('/subscribe');
+            setError('');
+            setLoading(true);
+            
+            // Get the stored price ID from session storage
+            const priceId = sessionStorage.getItem('selectedPriceId');
+            
+            // Sign up with Google
+            await signup(null, null, priceId, 'google');
+            
+            // Clear the stored price ID
+            sessionStorage.removeItem('selectedPriceId');
+            
+            // Check if there's a pending subscription
+            const subscriptionStatus = sessionStorage.getItem('subscriptionStatus');
+            if (subscriptionStatus === 'success') {
+                // Clear the stored status
+                sessionStorage.removeItem('subscriptionStatus');
+                // Navigate to subscription status to complete the process
+                navigate('/subscription-status?status=success');
+            } else {
+                // Navigate to subscription status page
+                navigate('/subscription-status');
+            }
         } catch (error) {
-            console.error('Google Sign-In Error:', error);
-            setError(`Failed to sign up with Google: ${error.message}`);
-        } finally {
-            setLoading(false);
+            setError('Failed to sign up with Google: ' + error.message);
         }
+        setLoading(false);
     };
     
 
@@ -106,7 +117,7 @@ const Signup = () => {
                 )}
 
                 {/* Email/Password Form */}
-                <form onSubmit={handleEmailSignup} className="mt-8 space-y-6">
+                <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                     <div className="rounded-md shadow-sm space-y-4">
                         <div>
                             <label htmlFor="email" className="sr-only">Email address</label>
@@ -152,7 +163,7 @@ const Signup = () => {
                             disabled={loading}
                             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                            {loading ? 'Creating account...' : 'Create account'}
+                            {loading ? 'Creating account...' : 'Sign up'}
                         </button>
                     </div>
                 </form>
@@ -174,6 +185,11 @@ const Signup = () => {
                         disabled={loading}
                         className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
+                        <img
+                            className="h-5 w-5 mr-2"
+                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                            alt="Google logo"
+                        />
                         Sign up with Google
                     </button>
                 </div>

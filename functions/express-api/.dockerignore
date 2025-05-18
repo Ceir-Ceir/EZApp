@@ -1,0 +1,9 @@
+node_modules
+__pycache__
+.env
+*.pyc
+firebase-debug.log
+serviceAccountKey.json
+*.db
+.DS_Store
+.vscode

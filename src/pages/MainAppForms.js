@@ -137,40 +137,40 @@ const MainAppForms = () => {
   };
   
   return (
-    <div className="flex flex-col md:flex-row gap-6 p-6">
+    <div className="flex flex-col lg:flex-row gap-4 p-4 lg:p-6">
       {/* Left Panel: Step Navigation */}
-      <div className="w-full md:w-1/3 bg-white rounded-lg shadow-md p-6">
+      <div className="w-full lg:w-1/3 bg-white rounded-lg shadow-md p-4 lg:p-6">
         <h2 className="text-xl font-semibold mb-4">Lets Build Your Resume</h2>
         <div className="space-y-4">
-        <Step
-          number={1}
-          label="Personal Information"
-          isActive={activeStep === 1}
-          onClick={() => handleStepClick(1)} // Update here
-        />
-        <Step
-          number={2}
-          label="Demographics"
-          isActive={activeStep === 2}
-          onClick={() => handleStepClick(2)} // Update here
-        />
-        <Step
-          number={3}
-          label="Education"
-          isActive={activeStep === 3}
-          onClick={() => handleStepClick(3)} // Update here
-        />
-        <Step
-          number={4}
-          label="Work Experience"
-          isActive={activeStep === 4}
-          onClick={() => handleStepClick(4)} // Update here
+          <Step
+            number={1}
+            label="Personal Information"
+            isActive={activeStep === 1}
+            onClick={() => handleStepClick(1)}
+          />
+          <Step
+            number={2}
+            label="Demographics"
+            isActive={activeStep === 2}
+            onClick={() => handleStepClick(2)}
+          />
+          <Step
+            number={3}
+            label="Education"
+            isActive={activeStep === 3}
+            onClick={() => handleStepClick(3)}
+          />
+          <Step
+            number={4}
+            label="Work Experience"
+            isActive={activeStep === 4}
+            onClick={() => handleStepClick(4)}
           />
         </div>
       </div>
 
       {/* Right Panel: Form Content */}
-      <div className="flex-1 bg-white rounded-lg shadow-md p-6">
+      <div className="flex-1 bg-white rounded-lg shadow-md p-4 lg:p-6">
         {renderForm()}
       </div>
     </div>
@@ -213,20 +213,20 @@ const PersonalInformationForm = ({ onNext, prefillData }) => {
       <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Full Name</label>
+          <label className="block text-sm font-medium mb-1">Full Name</label>
           <input
             type="text"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             placeholder="Enter your full name"
             value={formData.fullName}
             onChange={(e) => handleChange('fullName', e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">Email Address</label>
+          <label className="block text-sm font-medium mb-1">Email Address</label>
           <input
             type="email"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base bg-gray-50"
             placeholder="Enter your email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
@@ -234,20 +234,20 @@ const PersonalInformationForm = ({ onNext, prefillData }) => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">Phone Number</label>
+          <label className="block text-sm font-medium mb-1">Phone Number</label>
           <input
-            type="text"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            type="tel"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             placeholder="Enter your phone number"
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">LinkedIn Profile URL</label>
+          <label className="block text-sm font-medium mb-1">LinkedIn Profile URL</label>
           <input
             type="url"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             placeholder="Paste LinkedIn URL"
             value={formData.linkedIn}
             onChange={(e) => handleChange('linkedIn', e.target.value)}
@@ -257,7 +257,7 @@ const PersonalInformationForm = ({ onNext, prefillData }) => {
       <button
         type="button"
         onClick={handleSubmit}
-        className="mt-6 bg-blue-600 text-white py-2 rounded-lg font-medium"
+        className="mt-6 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium text-base hover:bg-blue-700 transition-colors"
       >
         Next
       </button>
@@ -293,14 +293,15 @@ const DemographicsForm = ({ onNext }) => {
       <div className="space-y-4">
         {/* Over 18 */}
         <div>
-          <label className="block text-sm font-medium">Are you over 18?</label>
-          <div className="flex space-x-4">
+          <label className="block text-sm font-medium mb-1">Are you over 18?</label>
+          <div className="flex flex-wrap gap-4">
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
                 value="Yes"
                 checked={formData.over18 === 'Yes'}
                 onChange={() => handleChange('over18', 'Yes')}
+                className="w-4 h-4"
               />
               <span>Yes</span>
             </label>
@@ -310,6 +311,7 @@ const DemographicsForm = ({ onNext }) => {
                 value="No"
                 checked={formData.over18 === 'No'}
                 onChange={() => handleChange('over18', 'No')}
+                className="w-4 h-4"
               />
               <span>No</span>
             </label>
@@ -318,9 +320,9 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Work Authorization */}
         <div>
-          <label className="block text-sm font-medium">Work Authorization</label>
+          <label className="block text-sm font-medium mb-1">Work Authorization</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             value={formData.workAuth}
             onChange={(e) => handleChange('workAuth', e.target.value)}
           >
@@ -334,14 +336,15 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Sponsorship */}
         <div>
-          <label className="block text-sm font-medium">Do you need sponsorship?</label>
-          <div className="flex space-x-4">
+          <label className="block text-sm font-medium mb-1">Do you need sponsorship?</label>
+          <div className="flex flex-wrap gap-4">
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
                 value="Yes"
                 checked={formData.sponsorship === 'Yes'}
                 onChange={() => handleChange('sponsorship', 'Yes')}
+                className="w-4 h-4"
               />
               <span>Yes</span>
             </label>
@@ -351,6 +354,7 @@ const DemographicsForm = ({ onNext }) => {
                 value="No"
                 checked={formData.sponsorship === 'No'}
                 onChange={() => handleChange('sponsorship', 'No')}
+                className="w-4 h-4"
               />
               <span>No</span>
             </label>
@@ -359,9 +363,9 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Gender */}
         <div>
-          <label className="block text-sm font-medium">Gender</label>
+          <label className="block text-sm font-medium mb-1">Gender</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             value={formData.gender}
             onChange={(e) => handleChange('gender', e.target.value)}
           >
@@ -376,9 +380,9 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Pronouns */}
         <div>
-          <label className="block text-sm font-medium">Preferred Pronouns</label>
+          <label className="block text-sm font-medium mb-1">Preferred Pronouns</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             value={formData.pronouns}
             onChange={(e) => handleChange('pronouns', e.target.value)}
           >
@@ -392,14 +396,15 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Disability Status */}
         <div>
-          <label className="block text-sm font-medium">Do you have a disability?</label>
-          <div className="flex space-x-4">
+          <label className="block text-sm font-medium mb-1">Do you have a disability?</label>
+          <div className="flex flex-wrap gap-4">
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
                 value="Yes"
                 checked={formData.disability === 'Yes'}
                 onChange={() => handleChange('disability', 'Yes')}
+                className="w-4 h-4"
               />
               <span>Yes</span>
             </label>
@@ -409,6 +414,7 @@ const DemographicsForm = ({ onNext }) => {
                 value="No"
                 checked={formData.disability === 'No'}
                 onChange={() => handleChange('disability', 'No')}
+                className="w-4 h-4"
               />
               <span>No</span>
             </label>
@@ -417,14 +423,15 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Veteran Status */}
         <div>
-          <label className="block text-sm font-medium">Are you a veteran?</label>
-          <div className="flex space-x-4">
+          <label className="block text-sm font-medium mb-1">Are you a veteran?</label>
+          <div className="flex flex-wrap gap-4">
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
                 value="Yes"
                 checked={formData.veteran === 'Yes'}
                 onChange={() => handleChange('veteran', 'Yes')}
+                className="w-4 h-4"
               />
               <span>Yes</span>
             </label>
@@ -434,6 +441,7 @@ const DemographicsForm = ({ onNext }) => {
                 value="No"
                 checked={formData.veteran === 'No'}
                 onChange={() => handleChange('veteran', 'No')}
+                className="w-4 h-4"
               />
               <span>No</span>
             </label>
@@ -442,9 +450,9 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Race/Ethnicity */}
         <div>
-          <label className="block text-sm font-medium">Race/Ethnicity</label>
+          <label className="block text-sm font-medium mb-1">Race/Ethnicity</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
             value={formData.race}
             onChange={(e) => handleChange('race', e.target.value)}
           >
@@ -466,16 +474,17 @@ const DemographicsForm = ({ onNext }) => {
 
         {/* Hispanic/Latino */}
         <div>
-          <label className="block text-sm font-medium">
+          <label className="block text-sm font-medium mb-1">
             Are you Hispanic or Latino?
           </label>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4">
             <label className="flex items-center space-x-2">
               <input
                 type="radio"
                 value="Yes"
                 checked={formData.hispanic === 'Yes'}
                 onChange={() => handleChange('hispanic', 'Yes')}
+                className="w-4 h-4"
               />
               <span>Yes</span>
             </label>
@@ -485,6 +494,7 @@ const DemographicsForm = ({ onNext }) => {
                 value="No"
                 checked={formData.hispanic === 'No'}
                 onChange={() => handleChange('hispanic', 'No')}
+                className="w-4 h-4"
               />
               <span>No</span>
             </label>
@@ -494,7 +504,7 @@ const DemographicsForm = ({ onNext }) => {
       <button
         type="button"
         onClick={handleSubmit}
-        className="mt-6 bg-blue-600 text-white py-2 rounded-lg font-medium"
+        className="mt-6 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium text-base hover:bg-blue-700 transition-colors"
       >
         Next
       </button>
@@ -533,70 +543,73 @@ const EducationForm = ({ onNext }) => {
   return (
     <form className="flex flex-col h-full">
       <h2 className="text-xl font-semibold mb-4">Education</h2>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {educationEntries.map((entry, index) => (
-          <div key={index} className="space-y-4 border-b pb-4">
+          <div key={index} className="space-y-4 border-b pb-6">
             <div>
-              <label className="block text-sm font-medium">School/University</label>
+              <label className="block text-sm font-medium mb-1">School/University</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter school/university name"
                 value={entry.school}
                 onChange={(e) => handleChange(index, 'school', e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium">City, State</label>
+              <label className="block text-sm font-medium mb-1">City, State</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter city and state (e.g., Boston, MA)"
                 value={entry.schoolCityState}
                 onChange={(e) => handleChange(index, 'schoolCityState', e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium">Degree</label>
+              <label className="block text-sm font-medium mb-1">Degree</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter degree"
                 value={entry.degree}
                 onChange={(e) => handleChange(index, 'degree', e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium">Start Date</label>
-              <input
-                type="date"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                value={entry.startDate}
-                onChange={(e) => handleChange(index, 'startDate', e.target.value)}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
+                  value={entry.startDate}
+                  onChange={(e) => handleChange(index, 'startDate', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">End Date</label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
+                  value={entry.endDate}
+                  onChange={(e) => handleChange(index, 'endDate', e.target.value)}
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium">End Date</label>
-              <input
-                type="date"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                value={entry.endDate}
-                onChange={(e) => handleChange(index, 'endDate', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Description</label>
+              <label className="block text-sm font-medium mb-1">Description</label>
               <textarea
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Describe your education"
                 value={entry.description}
                 onChange={(e) => handleChange(index, 'description', e.target.value)}
+                rows={3}
               />
             </div>
             {educationEntries.length > 1 && (
               <button
                 type="button"
-                className="text-red-500"
+                className="text-red-500 hover:text-red-700 transition-colors"
                 onClick={() => handleRemoveEntry(index)}
               >
                 Remove Entry
@@ -606,7 +619,7 @@ const EducationForm = ({ onNext }) => {
         ))}
         <button
           type="button"
-          className="text-blue-600"
+          className="text-blue-600 hover:text-blue-700 transition-colors"
           onClick={handleAddEntry}
         >
           + Add Another Entry
@@ -614,7 +627,7 @@ const EducationForm = ({ onNext }) => {
       </div>
       <button
         type="button"
-        className="mt-6 bg-blue-600 text-white py-2 rounded-lg font-medium"
+        className="mt-6 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium text-base hover:bg-blue-700 transition-colors"
         onClick={handleSubmit}
       >
         Next

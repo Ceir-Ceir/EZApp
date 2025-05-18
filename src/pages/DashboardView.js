@@ -83,11 +83,24 @@ const DashboardView = () => {
     if (userId) fetchData();
   }, [userId]);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="text-red-600 text-center p-4">
+      {error}
+    </div>
+  );
 
   if (!userData) {
-    return <div>No user data available</div>;
+    return (
+      <div className="text-center p-4">
+        No user data available
+      </div>
+    );
   }
 
   // Export to Excel
@@ -159,321 +172,89 @@ const DashboardView = () => {
   };
 
   return (
-    <div className="p-8">
-      {/* Export to Excel Button */}
-      <button
-        className="ml-auto flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-        onClick={handleExcelExport}
-      >
-        <FontAwesomeIcon icon={faFileExcel} className="text-xl" />
-        &nbsp;Export
-      </button>
-      {/* Header */}
-      <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-2xl font-bold">{userData.fullName}'s Dashboard</h1>
-        <div className="flex flex-wrap gap-4">
-          <p className="text-gray-700">
-            <span className="font-medium">Email: </span>
-            {userEmail}
-          </p>
-          <p className="text-gray-700">
-            <span className="font-medium">Phone: </span>
-            {userData.phone}
-          </p>
-          <p className="text-gray-700">
-            <span className="font-medium">Location: </span>
-            {userData.location}
-          </p>
+    <div className="space-y-6">
+      {/* Profile Summary */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4">Profile Summary</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Full Name</h3>
+            <p className="text-base">{userData.fullName || 'Not provided'}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
+            <p className="text-base">{userData.email || 'Not provided'}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
+            <p className="text-base">{userData.phone || 'Not provided'}</p>
+          </div>
         </div>
       </div>
 
-      {/* Skills Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex justify-between items-center">
-          <span>Skills</span>
-          {!isEditingSkills && (
-            <button
-              onClick={() => setIsEditingSkills(true)}
-              className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-            >
-              Edit
-            </button>
-          )}
-        </h2>
-        {isEditingSkills ? (
-          <div>
-            {userData.skills.map((skill, index) => (
-              <div key={index} className="flex items-center gap-2 mb-2">
-                <input
-                  type="text"
-                  value={skill}
-                  onChange={(e) => handleSkillChange(index, e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                />
-                <button
-                  onClick={() => handleRemoveSkill(index)}
-                  className="text-red-500 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={handleAddSkill}
-              className="text-blue-600 hover:underline mb-4"
-            >
-              + Add Skill
-            </button>
-            <div>
-              <button
-                onClick={() => {
-                  saveData(); // Save data when the user clicks "Save"
-                  setIsEditingSkills(false); // Exit edit mode
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditingSkills(false)}
-                className="bg-gray-300 text-black px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
+      {/* Education */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4">Education</h2>
+        <div className="space-y-4">
+          {userData.education?.map((edu, index) => (
+            <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-2">{edu.school}</h3>
+              <p className="text-gray-600 mb-1">{edu.degree}</p>
+              <p className="text-gray-600 mb-1">{edu.schoolCityState}</p>
+              <p className="text-gray-600">
+                {edu.startDate} - {edu.endDate}
+              </p>
+              {edu.description && (
+                <p className="text-gray-600 mt-2">{edu.description}</p>
+              )}
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {userData.skills.map((skill, index) => (
-              <span
-                key={index}
-                className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Experience Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Experience</h2>
-        {isEditingExperiences ? (
-          <div>
-            {userData.experiences.map((experience, index) => (
-              <div key={index} className="mb-4 border-b border-gray-200 pb-4">
-                <input
-                  type="text"
-                  value={experience.position}
-                  onChange={(e) =>
-                    handleExperienceChange(index, "position", e.target.value)
-                  }
-                  placeholder="Job Title"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={experience.company}
-                  onChange={(e) =>
-                    handleExperienceChange(index, "company", e.target.value)
-                  }
-                  placeholder="Company Name"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={experience.startDate}
-                  onChange={(e) =>
-                    handleExperienceChange(index, "startDate", e.target.value)
-                  }
-                  placeholder="Start Date"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={experience.endDate}
-                  onChange={(e) =>
-                    handleExperienceChange(index, "endDate", e.target.value)
-                  }
-                  placeholder="End Date"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                />
-                <button
-                  onClick={() => handleRemoveExperience(index)}
-                  className="text-red-500 hover:underline mt-2"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={handleAddExperience}
-              className="text-blue-600 hover:underline mb-4"
-            >
-              + Add Experience
-            </button>
-            <div>
-              <button
-                onClick={() => {
-                  saveData(); // Save data when the user clicks "Save"
-                  setIsEditingExperiences(false); // Exit edit mode
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditingExperiences(false)}
-                className="bg-gray-300 text-black px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
+      {/* Work Experience */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4">Work Experience</h2>
+        <div className="space-y-4">
+          {userData.experiences?.map((exp, index) => (
+            <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-2">{exp.title}</h3>
+              <p className="text-gray-600 mb-1">{exp.company}</p>
+              <p className="text-gray-600 mb-1">{exp.location}</p>
+              <p className="text-gray-600">
+                {exp.startDate} - {exp.endDate}
+              </p>
+              {exp.description && (
+                <p className="text-gray-600 mt-2">{exp.description}</p>
+              )}
             </div>
-          </div>
-        ) : (
-          <div>
-            <ul className="space-y-4">
-              {userData.experiences.map((experience, index) => (
-                <li key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{experience.position}</h3>
-                    <p className="text-gray-600">
-                      {experience.company} | {experience.startDate} - {experience.endDate}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsEditingExperiences(true)}
-                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                  >
-                    Edit
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
-      {/* Education Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Education</h2>
-        {isEditingEducation ? (
-          <div>
-            {userData.education.map((edu, index) => (
-              <div key={index} className="mb-4 border-b border-gray-200 pb-4">
-                <input
-                  type="text"
-                  value={edu.degree}
-                  onChange={(e) =>
-                    handleEducationChange(index, "degree", e.target.value)
-                  }
-                  placeholder="Degree"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={edu.school}
-                  onChange={(e) =>
-                    handleEducationChange(index, "school", e.target.value)
-                  }
-                  placeholder="School Name"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={edu.schoolCityState}
-                  onChange={(e) =>
-                    handleEducationChange(index, "schoolCityState", e.target.value)
-                  }
-                  placeholder="City, State"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={edu.startDate}
-                  onChange={(e) =>
-                    handleEducationChange(index, "startDate", e.target.value)
-                  }
-                  placeholder="Start Date"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={edu.endDate}
-                  onChange={(e) =>
-                    handleEducationChange(index, "endDate", e.target.value)
-                  }
-                  placeholder="End Date"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                />
-                <button
-                  onClick={() => handleRemoveEducation(index)}
-                  className="text-red-500 hover:underline mt-2"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={handleAddEducation}
-              className="text-blue-600 hover:underline mb-4"
+      {/* Skills */}
+      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4">Skills</h2>
+        <div className="flex flex-wrap gap-2">
+          {userData.skills?.map((skill, index) => (
+            <span
+              key={index}
+              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
             >
-              + Add Education
-            </button>
-            <div>
-              <button
-                onClick={() => {
-                  saveData(); // Save data when the user clicks "Save"
-                  setIsEditingEducation(false); // Exit edit mode
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditingEducation(false)}
-                className="bg-gray-300 text-black px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <ul className="space-y-4">
-              {userData.education.map((edu, index) => (
-                <li key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{edu.degree}</h3>
-                    <p className="text-gray-600">
-                      {edu.school} | {edu.schoolCityState} | {edu.startDate} - {edu.endDate}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsEditingEducation(true)}
-                    className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                  >
-                    Edit
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+              {skill}
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* Social Links Section */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Social Links</h2>
-        <a
-          href={userData.linkedIn}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+      {/* Edit Profile Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => navigate('/main-app-forms')}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          LinkedIn
-        </a>
+          Edit Profile
+        </button>
       </div>
     </div>
   );
