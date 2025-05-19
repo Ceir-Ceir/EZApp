@@ -35,3 +35,6 @@ firebase-debug.log
 # IDE
 .idea/
 .vscode/
+functions/automation/ezapp-91d8e-firebase-adminsdk-kj65k-1ac11562b6.json
+functions/automation/serviceAccountKey.json
+server/.env
