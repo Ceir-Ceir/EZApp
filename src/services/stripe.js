@@ -11,7 +11,9 @@ export async function createSubscription(userId, priceId) {
         console.log('Creating subscription for user:', userId, 'with price:', priceId);
         
         const stripe = await stripePromise;
-
+        const apiUrl =
+      process.env.REACT_APP_API_URL ||
+      "https://us-central1-ezapp-91d8e.cloudfunctions.net/api";
         // Validate Stripe object
         if (!stripe) {
             throw new Error('Stripe.js failed to initialize.');
@@ -29,9 +31,13 @@ export async function createSubscription(userId, priceId) {
         console.log('User data retrieved:', userData);
 
         // Call your backend API to create a session
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/create-checkout-session`, {
+        const response = await fetch(`${apiUrl}/create-checkout-session`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                // Add authorization header if your backend requires it
+                // 'Authorization': `Bearer ${await currentUser.getIdToken()}`
+            },
             body: JSON.stringify({
                 userId,
                 priceId,
@@ -44,17 +50,27 @@ export async function createSubscription(userId, priceId) {
             throw new Error(errorData.error || 'Failed to create checkout session');
         }
 
-        const { sessionId, url } = await response.json();
-        console.log('Checkout session created:', { sessionId, url });
+        const session = await response.json();
+        console.log('Checkout session created:', session);
 
-        // Redirect to Stripe Checkout
-        const { error } = await stripe.redirectToCheckout({
-            sessionId,
-        });
+        // Check if we got a URL directly (compatible with our backend)
+        if (session.url) {
+            window.location.href = session.url;
+            return;
+        }
 
-        if (error) {
-            console.error('Stripe redirect error:', error);
-            throw new Error(error.message);
+        // Fallback to redirectToCheckout if we got a sessionId
+        if (session.id) {
+            const { error } = await stripe.redirectToCheckout({
+                sessionId: session.id,
+            });
+
+            if (error) {
+                console.error('Stripe redirect error:', error);
+                throw new Error(error.message);
+            }
+        } else {
+            throw new Error('No valid session response from server');
         }
         
     } catch (error) {
@@ -70,7 +86,11 @@ export const updateUserSubscriptionStatus = async (userId, status, planLevel) =>
         await updateDoc(userRef, {
             subscriptionStatus: status,
             planLevel: planLevel,
-            updatedAt: serverTimestamp()
+            updatedAt: serverTimestamp(),
+            // Add job automation fields if needed
+            jobs_assigned_this_week: 0,
+            weekly_job_limit: calculateWeeklyJobs(planLevel),
+            last_job_application: null
         });
         console.log(`Updated subscription status for user ${userId} to ${status} with plan level ${planLevel}`);
     } catch (error) {
@@ -79,24 +99,44 @@ export const updateUserSubscriptionStatus = async (userId, status, planLevel) =>
     }
 };
 
+// Helper function to calculate weekly jobs (should match backend)
+function calculateWeeklyJobs(planLevel) {
+    const monthlyLimits = {
+        'basic': 100,
+        'pro': 250,
+        'enterprise': 500
+    };
+    
+    const monthlyLimit = monthlyLimits[planLevel] || 0;
+    return Math.floor(monthlyLimit / 4);
+}
+
 // Check the user's subscription status from Firestore
 export async function checkSubscriptionStatus(userId) {
-    console.log("Checking subscription status for user: ", userId)
     try {
         const userRef = doc(db, 'Users', userId);
         const userSnap = await getDoc(userRef);
-        console.log("userSnap: ", userSnap);
 
         if (!userSnap.exists()) {
-            return 'inactive';
+            return {
+                status: 'inactive',
+                planLevel: 'none'
+            };
         }
 
         const userData = userSnap.data();
-        console.log("userData: ", userData);
-        return userData.subscriptionStatus || 'inactive';
+        return {
+            status: userData.subscriptionStatus || 'inactive',
+            planLevel: userData.planLevel || 'none',
+            profileComplete: userData.profileComplete || false
+        };
     } catch (error) {
-        console.error('Error checking subscription status:', error.message);
-        return 'inactive';
+        console.error('Error checking subscription status:', error);
+        return {
+            status: 'inactive',
+            planLevel: 'none',
+            profileComplete: false
+        };
     }
 }
 

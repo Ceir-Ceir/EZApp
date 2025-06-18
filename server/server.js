@@ -1,424 +1,514 @@
-// server/server.js
-require('dotenv').config();
-const express = require('express');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const cors = require('cors');
-const path = require('path');
-const app = express();
+const { onRequest } = require("firebase-functions/v2/https");
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-// Enable CORS for both development and production
-app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:4243',
-        'https://ezapp-91d8e.web.app',
-        'https://ezapp-91d8e.firebaseapp.com',
-        'https://getezapply.com'
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
+const admin = require("firebase-admin");
 
-
-// Serve static files from the root public directory
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
-// Use JSON parsing for all routes
-app.use(express.json());
-
-
-// In your server.js file
-const port = process.env.PORT || 8080;
-let server;
-
-try {
-  server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on port ${port}`);
-  });
-} catch (err) {
-  console.error('Failed to start server:', err);
-  // Try a different port if 8080 is in use
-  const altPort = 8081;
-  server = app.listen(altPort, '0.0.0.0', () => {
-    console.log(`Server listening on alternate port ${altPort}`);
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
   });
 }
 
-// Add graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Server closed');
-  });
+const db = admin.firestore();
+
+// Initialize Express app
+const app = express();
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:4243",
+      "https://ezapp-91d8e.web.app",
+      "https://ezapp-91d8e.firebaseapp.com",
+      "https://getezapply.com",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
+
+// Pre-flight requests
+app.options("*", cors());
+
+// Serve static files from the root public directory
+app.use(express.static(path.join(__dirname, "..", "public")));
+
+app.use((req, res, next) => {
+  // if (req.originalUrl === "/webhook") {
+  //   next();
+  // } else {
+    express.json()(req, res, next);
+  // }
 });
 
-
-// Webhook endpoint must use raw body
-app.post('/webhook', express.raw({ type: 'application/json' }), async (request, response) => {
-    const sig = request.headers['stripe-signature'];
+// Webhook handler
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const sig = req.headers["stripe-signature"];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    console.log("[INFO] Webhook received!");
 
     let event;
 
     try {
-        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-        console.log('✅ Webhook verified:', event.type);
+      if (!endpointSecret) {
+        throw new Error("Stripe webhook secret not configured");
+      }
 
-        // Helper function to get userId from event
-        const getUserIdFromEvent = async (eventData) => {
-            console.log('Event data for userId extraction:', {
-                client_reference_id: eventData.client_reference_id,
-                metadata: eventData.metadata,
-                customer: eventData.customer ? eventData.customer : 'No customer ID'
-            });
-        
-            // Try client_reference_id first
-            if (eventData.client_reference_id) {
-                console.log('Found userId in client_reference_id:', eventData.client_reference_id);
-                return eventData.client_reference_id;
-            }
-            
-            // Try metadata as backup
-            if (eventData.metadata && eventData.metadata.userId) {
-                console.log('Found userId in metadata:', eventData.metadata.userId);
-                return eventData.metadata.userId;
-            }
-        
-            // If we have a customer, try to get the metadata from the customer
-            if (eventData.customer) {
-                try {
-                    const customer = await stripe.customers.retrieve(eventData.customer);
-                    if (customer.metadata && customer.metadata.userId) {
-                        console.log('Found userId in customer metadata:', customer.metadata.userId);
-                        return customer.metadata.userId;
-                    }
-                } catch (err) {
-                    console.error('Error retrieving customer:', err);
-                }
-            }
-        
-            console.log('❌ No userId found in event data');
-            return null;
-        };
+      if (!sig) {
+        throw new Error("No Stripe signature header");
+      }
 
-        // Handle the event
-        switch (event.type) {
-            case 'checkout.session.completed': {
-                const session = event.data.object;
-                console.log('Processing checkout.session.completed:', session.id);
-                
-                const userId = await getUserIdFromEvent(session);
-                
-                if (!userId) {
-                    console.error('❌ No userId found in checkout session:', session.id);
-                    throw new Error('No userId found in checkout session');
-                }
-                
-                console.log(`✅ Checkout completed for user ${userId}`);
-                await updateUserSubscriptionStatus(userId, 'active', getPlanLevel(session));
-                break;
-            }
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+      console.log("[INFO] Webhook verified:", event.type);
 
-            case 'invoice.paid': {
-                const invoice = event.data.object;
-                console.log('Processing invoice.paid event:', invoice.id);
-                
-                // Get the subscription to ensure we have the full context
-                const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-                const userId = await getUserIdFromEvent(subscription);
-                
-                if (!userId) {
-                    console.error('❌ No userId found in subscription:', subscription.id);
-                    throw new Error('No userId found in subscription');
-                }
+      // Helper function to get userId from event
+      const getUserIdFromEvent = async (eventData) => {
+        console.log("[INFO] Event data for userId extraction:", {
+          client_reference_id: eventData.client_reference_id,
+          metadata: eventData.metadata,
+          customer: eventData.customer ? eventData.customer : "No customer ID",
+        });
 
-                // Get the plan level from the invoice
-                const planLevel = getPlanLevel(invoice);
-                console.log(`✅ Invoice paid for user ${userId} with plan level ${planLevel}`);
-                
-                await updateUserSubscriptionStatus(userId, 'active', planLevel);
-                break;
-            }
-
-            case 'customer.subscription.updated':
-            case 'customer.subscription.deleted': {
-                const subscription = event.data.object;
-                const userId = await getUserIdFromEvent(subscription);
-    
-                if (!userId) {
-                    console.error('❌ No userId found in subscription:', subscription.id);
-                    throw new Error('No userId found in subscription');
-                }
-                
-                // Determine subscription status
-                let status = 'inactive';
-                let planLevel = 'none';
-                
-                if (subscription.status === 'active' || subscription.status === 'trialing') {
-                    status = 'active';
-                    planLevel = getPlanLevel(subscription);
-                }
-
-                console.log(`✅ Subscription ${event.type} for user ${userId} with plan level ${planLevel}`);
-                await updateUserSubscriptionStatus(userId, status, planLevel);
-                break;
-            }
-
-            default:
-                console.log(`Unhandled event type ${event.type}`);
+        // Try client_reference_id first
+        if (eventData.client_reference_id) {
+          console.log(
+            "[INFO] Found userId in client_reference_id:",
+            eventData.client_reference_id
+          );
+          return eventData.client_reference_id;
         }
 
-        response.json({ received: true });
+        // Try metadata as backup
+        if (eventData.metadata && eventData.metadata.userId) {
+          console.log("[INFO] Found userId in metadata:", eventData.metadata.userId);
+          return eventData.metadata.userId;
+        }
+
+        // If we have a customer, try to get the metadata from the customer
+        if (eventData.customer) {
+          try {
+            const customer = await stripe.customers.retrieve(
+              eventData.customer
+            );
+            if (customer.metadata && customer.metadata.userId) {
+              console.log(
+                "[INFO] Found userId in customer metadata:",
+                customer.metadata.userId
+              );
+              return customer.metadata.userId;
+            }
+          } catch (err) {
+            console.error("[INFO] Error retrieving customer:", err);
+          }
+        }
+
+        console.log("[INFO]  No userId found in event data");
+        return null;
+      };
+
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object;
+          const userId = await getUserIdFromEvent(session);
+
+          // Verify the payment status first
+          if (session.payment_status !== "paid") {
+            console.log("[INFO] Payment not completed yet, skipping");
+            break;
+          }
+
+          if (!userId) {
+            console.error(
+              "[INFO] No userId found in checkout session:",
+              session.id
+            );
+            throw new Error("No userId found in checkout session");
+          }
+
+          console.log(`[INFO] Checkout completed for user ${userId}`);
+
+          if (session.subscription) {
+            const subscription = await stripe.subscriptions.retrieve(
+              session.subscription
+            );
+            await updateUserSubscriptionStatus(
+              userId,
+              "active",
+              getPlanLevel(subscription)
+            );
+          } else {
+            await updateUserSubscriptionStatus(userId, "active", "unknown");
+          }
+          break;
+        }
+
+        case "invoice.paid": {
+          const invoice = event.data.object;
+          const subscription = await stripe.subscriptions.retrieve(
+            invoice.subscription
+          );
+          const userId = getUserIdFromEvent(subscription);
+
+          if (!userId) {
+            console.error("[INFO] No userId found in invoice.paid:", invoice.id);
+            throw new Error("No userId found in invoice.paid");
+          }
+
+          console.log(`✅ Invoice paid for user ${userId}`);
+          await updateUserSubscriptionStatus(
+            userId,
+            "active",
+            getPlanLevel(subscription)
+          );
+          break;
+        }
+
+        case "customer.subscription.created":
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted": {
+          const subscription = event.data.object;
+          const userId = getUserIdFromEvent(subscription);
+
+          if (!userId) {
+            console.error(
+              "[INFO] No userId found in subscription:",
+              subscription.id
+            );
+            throw new Error("No userId found in subscription");
+          }
+
+          let status = ["active", "trialing"].includes(subscription.status)
+            ? "active"
+            : "inactive";
+          const planLevel = getPlanLevel(subscription);
+
+          console.log(`[INFO] Subscription ${event.type} for user ${userId}`);
+          await updateUserSubscriptionStatus(userId, status, planLevel);
+          break;
+        }
+
+        default:
+          console.log(`[INFO] Unhandled event type: ${event.type}`);
+          return res.status(400).send("Unhandled event type ${event.type}");
+      }
+
+      res.json({ received: true });
     } catch (err) {
-        console.error(`❌ Webhook Error: ${err.message}`);
-        response.status(400).send(`Webhook Error: ${err.message}`);
+      console.error(`[INFO] Webhook Error: ${err.message}`);
+      res.status(400).send(`Webhook Error: ${err.message}`);
     }
+  }
+);
+
+// Fetch available plans
+app.get("/api/get-plans", async (req, res) => {
+  try {
+    const prices = await stripe.prices.list({ active: true, limit: 10 });
+    const products = await Promise.all(
+      prices.data.map((p) => stripe.products.retrieve(p.product))
+    );
+
+    const formatted = prices.data
+      .map((price, i) => ({
+        id: price.id,
+        name: products[i]?.name || "Plan",
+        description: products[i]?.description || "",
+        price: (price.unit_amount || 0) / 100,
+        currency: price.currency.toUpperCase(),
+        priceId: price.id,
+      }))
+      .sort((a, b) => a.price - b.price);
+
+    res.json(formatted);
+  } catch (error) {
+    console.error("Error fetching plans:", error);
+    res.status(500).json({ error: "Failed to fetch plans" });
+  }
 });
 
-// Endpoint to get available plans
-app.get('/api/get-plans', async (req, res) => {
-    console.log("inside get plans api");
-    try {
-        // Fetch all prices from Stripe
-        const prices = await stripe.prices.list({
-            active: true,  // Only get active prices
-            limit: 10,     // You can adjust the limit as needed
-        });
+// Create Stripe Checkout Session
+app.post("/api/create-checkout-session", async (req, res) => {
+  const { priceId, userId, userEmail } = req.body;
+  console.log("[INFO] Creating checkout session with:", req.body);
+  if (!userId && !userEmail) {
+    return res.status(400).json({ error: "Missing userId and userEmail." });
+  }
 
-        // Fetch associated products to get descriptions
-        const productPromises = prices.data.map((price) =>
-            stripe.products.retrieve(price.product)
-        );
-        const products = await Promise.all(productPromises);
+  const clientUrl = process.env.CLIENT_URL || "https://getezapply.com";
 
-        // Combine price and product data, sort by price
-        const formattedPlans = prices.data
-            .map((price, index) => ({
-                id: price.id,
-                name: products[index]?.name || 'Plan',
-                description: products[index]?.description || 'No description available.',
-                price: price.unit_amount / 100, // Convert to decimal for sorting
-                currency: price.currency.toUpperCase(),
-                priceId: price.id,
-            }))
-            .sort((a, b) => a.price - b.price); // Sort by price (lowest to highest)
-
-        res.json(formattedPlans);
-    } catch (error) {
-        console.error('Error fetching plans:', error);
-        res.status(500).send({ error: 'Failed to fetch plans' });
+  try {
+    // Validate required fields
+    if (!priceId) {
+      return res.status(400).json({ error: "Missing price ID." });
     }
-});
 
-// Checkout session endpoint
-app.post('/api/create-checkout-session', async (req, res) => {
-    console.log("Creating checkout session with request body:", req.body);
-    const { priceId, userId, userEmail } = req.body;
-    
-    try {
-        // Validate required fields
-        if (!priceId) {
-            return res.status(400).json({ error: 'Missing price ID.' });
+    // If no userId provided but we have userEmail, try to find the user
+    let finalUserId = userId;
+    if (!finalUserId && userEmail) {
+      try {
+
+        
+        const usersRef = db.collection("Users");
+        const q = usersRef.where("email", "==", userEmail);
+        const querySnapshot = await q.get();
+
+        if (!querySnapshot.empty) {
+          finalUserId = querySnapshot.docs[0].id;
+          console.log("[INFO] Found user by email:", finalUserId);
         }
-
-        // If no userId provided but we have userEmail, try to find the user
-        let finalUserId = userId;
-        if (!finalUserId && userEmail) {
-            try {
-                const admin = require('firebase-admin');
-                
-                // Initialize Firebase Admin if not already initialized
-                if (!admin.apps.length) {
-                    admin.initializeApp({
-                        credential: admin.credential.applicationDefault(),
-                    });
-                }
-
-                const db = admin.firestore();
-                const usersRef = db.collection('Users');
-                const q = usersRef.where('email', '==', userEmail);
-                const querySnapshot = await q.get();
-
-                if (!querySnapshot.empty) {
-                    finalUserId = querySnapshot.docs[0].id;
-                    console.log("Found user by email:", finalUserId);
-                }
-            } catch (error) {
-                console.error('Error finding user by email:', error);
-            }
-        }
-
-        console.log("Final userId for checkout:", finalUserId);
-
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price: priceId,
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',
-            success_url: `${process.env.CLIENT_URL}/subscription-status?status=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.CLIENT_URL}/subscription-status?status=cancelled`,
-            client_reference_id: finalUserId, // Make sure this is set
-            customer_email: userEmail,
-            allow_promotion_codes: true,
-            billing_address_collection: 'required',
-            metadata: {
-                userId: finalUserId // Backup in metadata
-            }
-        });
-
-        console.log("Created checkout session:", session.id);
-        res.json({ id: session.id, url: session.url });
-    } catch (error) {
-        console.error('Error creating checkout session:', error);
-        res.status(500).json({ 
-            error: error.message,
-            code: error.code // Include Stripe error code if available
-        });
+      } catch (error) {
+        console.error("[INFO] Error finding user by email:", error);
+      }
     }
+
+    console.log("[INFO] Final userId for checkout:", finalUserId);
+    const successUrl = `${clientUrl}/subscription-status?status=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${clientUrl}/subscription-status?status=cancelled`;
+
+    console.log("[INFO] Success URL indexjs:", successUrl);
+    console.log("[INFO] Cancel URL indexjs:", cancelUrl);
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: finalUserId, // Make sure this is set
+      customer_email: userEmail,
+      allow_promotion_codes: true,
+      billing_address_collection: "required",
+      metadata: {
+        userId: finalUserId, // Backup in metadata
+      },
+    });
+
+    console.log("[INFO] Created checkout session:", session.id);
+    res.json({ id: session.id, url: session.url });
+  } catch (error) {
+    console.error("[INFO] Error creating checkout session:", error);
+    res.status(500).json({
+      error: error.message,
+      code: error.code, // Include Stripe error code if available
+    });
+  }
 });
 
 // Helper function to get plan level from Stripe object
 function getPlanLevel(stripeObject) {
-    // For invoice events, we need to get the price ID from the line items
-    if (stripeObject.object === 'invoice') {
-        const lineItem = stripeObject.lines?.data[0];
-        if (!lineItem) return 'none';
-        
-        const priceId = lineItem.price?.id;
-        if (!priceId) return 'none';
+  // For invoice events, we need to get the price ID from the line items
+  if (stripeObject.object === "invoice") {
+    const lineItem = stripeObject.lines?.data[0];
+    if (!lineItem) return "none";
 
-        if (priceId === process.env.STRIPE_BASIC_PRICE_ID) return 'basic';
-        if (priceId === process.env.STRIPE_PRO_PRICE_ID) return 'pro';
-        if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) return 'enterprise';
-        return 'none';
-    }
+    const priceId = lineItem.price?.id;
+    if (!priceId) return "none";
 
-    // For other objects (subscription, session), get from items
-    const priceId = stripeObject.items?.data[0]?.price?.id;
-    if (!priceId) return 'none';
+    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) return "basic";
+    if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "pro";
+    if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) return "enterprise";
+    return "none";
+  }
 
-    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) return 'basic';
-    if (priceId === process.env.STRIPE_PRO_PRICE_ID) return 'pro';
-    if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) return 'enterprise';
-    return 'none';
+  // For other objects (subscription, session), get from items
+  const priceId = stripeObject.items?.data[0]?.price?.id;
+  if (!priceId) return "none";
+
+  if (priceId === process.env.STRIPE_BASIC_PRICE_ID) return "basic";
+  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "pro";
+  if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) return "enterprise";
+  return "none";
 }
 
 // Helper function to update user subscription status in Firebase
 async function updateUserSubscriptionStatus(userId, status, planLevel) {
-    try {
-        const admin = require('firebase-admin');
-        
-        // Initialize Firebase Admin if not already initialized
-        if (!admin.apps.length) {
-            admin.initializeApp({
-                credential: admin.credential.applicationDefault(),
-            });
+  try {
+
+    console.log("[INFO] inside updateUserSubscriptionStatus");
+
+    // Update subscription status
+    await db
+      .collection("Users")
+      .doc(userId)
+      .update({
+        subscriptionStatus: status,
+        planLevel: planLevel,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        // Add job automation fields
+        jobs_assigned_this_week: 0,
+        weekly_job_limit: calculateWeeklyJobs(planLevel),
+        last_job_application: null,
+      });
+
+    // If subscription is active, trigger job automation
+    if (status === "active") {
+      try {
+        // Get user preferences
+        const userDoc = await db.collection("Users").doc(userId).get();
+        if (!userDoc.exists) {
+          console.error("[INFO] User document not found:", userId);
+          return;
         }
+        const userData = userDoc.data();
 
-        const db = admin.firestore();
-        
-        // Update subscription status
-        await db.collection('Users').doc(userId).update({
-            subscriptionStatus: status,
-            planLevel: planLevel,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            // Add job automation fields
-            jobs_assigned_this_week: 0,
-            weekly_job_limit: calculateWeeklyJobs(planLevel),
-            last_job_application: null
-        });
+        const planLevel = userData.subscription?.planLevel || "basic";
 
-        // If subscription is active, trigger job automation
-        if (status === 'active') {
-            try {
-                // Get user preferences
-                const userDoc = await db.collection('Users').doc(userId).get();
-                const userData = userDoc.data();
-                
-                if (userData) {
-                    // Start job scraping process
-                    const { spawn } = require('child_process');
-                    const pythonProcess = spawn('python3', [
-                        'functions/automation/jobscraper.py',
-                        '--user_id', userId,
-                        '--preferences', JSON.stringify({
-                            job_titles: userData.jobSearchPreferences?.jobPreferences?.jobTitle ? [userData.jobSearchPreferences.jobPreferences.jobTitle] : [],
-                            locations: userData.jobSearchPreferences?.jobPreferences?.location ? [userData.jobSearchPreferences.jobPreferences.location] : []
-                        }),
-                        '--limit', calculateWeeklyJobs(planLevel).toString()
-                    ]);
+        if (userData) {
+          // Start job scraping process
+          const { spawn } = require("child_process");
+          const pythonProcess = spawn("python3", [
+            "functions/automation/jobscraper.py",
+            "--user_id",
+            userId,
+            "--preferences",
+            JSON.stringify({
+              job_titles: userData.jobSearchPreferences?.jobPreferences
+                ?.jobTitle
+                ? [userData.jobSearchPreferences.jobPreferences.jobTitle]
+                : [],
+              locations: userData.jobSearchPreferences?.jobPreferences?.location
+                ? [userData.jobSearchPreferences.jobPreferences.location]
+                : [],
+            }),
+            "--limit",
+            calculateWeeklyJobs(planLevel).toString(),
+          ]);
 
-                    pythonProcess.stdout.on('data', (data) => {
-                        console.log(`Job scraper output: ${data}`);
-                    });
+          pythonProcess.stdout.on("data", (data) => {
+            console.log(`[INFO] Job scraper output: ${data}`);
+          });
 
-                    pythonProcess.stderr.on('data', (data) => {
-                        console.error(`Job scraper error: ${data}`);
-                    });
+          pythonProcess.stderr.on("data", (data) => {
+            console.error(`[INFO] Job scraper error: ${data}`);
+          });
 
-                    pythonProcess.on('close', (code) => {
-                        console.log(`Job scraper process exited with code ${code}`);
-                    });
-                }
-            } catch (error) {
-                console.error('Error starting job automation:', error);
-            }
+          pythonProcess.on("close", (code) => {
+            console.log(`[INFO] Job scraper process exited with code ${code}`);
+          });
         }
-
-        console.log(`✅ Updated subscription status for user ${userId} to ${status} with plan level ${planLevel}`);
-    } catch (error) {
-        console.error('Error updating user subscription status:', error);
-        throw error;
+      } catch (error) {
+        console.error("[INFO] Error starting job automation:", error);
+      }
+    } else {
+      console.log("[INFO] Subscription is not active. Skipping job automation.");
     }
+
+    console.log(
+      `[INFO] Updated subscription status for user ${userId} to ${status} with plan level ${planLevel}`
+    );
+  } catch (error) {
+    console.error("[INFO] Error updating user subscription status:", error);
+    throw error;
+  }
 }
 
 // Helper function to calculate weekly job limit based on plan level
 function calculateWeeklyJobs(planLevel) {
-    const monthlyLimits = {
-        'basic': 100,
-        'pro': 250,
-        'enterprise': 500
-    };
-    
-    const monthlyLimit = monthlyLimits[planLevel] || 0;
-    return Math.floor(monthlyLimit / 4); // Weekly limit is monthly limit divided by 4
+  const monthlyLimits = {
+    basic: 100,
+    pro: 250,
+    enterprise: 500,
+  };
+
+  const monthlyLimit = monthlyLimits[planLevel] || 0;
+  return Math.floor(monthlyLimit / 4); // Weekly limit is monthly limit divided by 4
 }
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'healthy' });
+// Stripe test route
+app.get("/api/stripe-subscription", async (req, res) => {
+  try {
+    const { customerId } = req.query;
+    if (!customerId) {
+      return res.status(400).json({ error: "Missing customer ID" });
+    }
+
+    const customer = await stripe.customers.retrieve(customerId);
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      limit: 1,
+    });
+
+    if (subscriptions.data.length === 0) {
+      return res.status(404).json({ error: "No subscription found" });
+    }
+
+    res.json(subscriptions.data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.get('/api/stripe-subscription', async (req, res) => {
-    try {
-      const customer = await stripe.customers.retrieve('customer-id');
-      const subscription = await stripe.subscriptions.list({
-        customer: customer.id,
-      });
-  
-      res.json(subscription.data[0]); // Send the first subscription details
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+// Health check
+app.get("/health", (req, res) => {
+  console.log("[INFO] Health check endpoint hit.");
+  res.status(200).json({ status: "healthy" });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Server Error:', err);
-    res.status(500).json({
-        error: 'Internal Server Error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+  console.error("[INFO] Server Error:", err);
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
 });
 
 // Handle 404s
-app.use((req, res) => {
-    res.status(404).json({ error: 'Not Found' });
+app.use((req, res, next) => {
+  res.status(404).json({ error: "Not Found" });
 });
 
-// Export the app instead of starting the server
-module.exports = app;
+// Local development / Cloud Run port fallback
+// if (process.env.K_SERVICE) {
+//   let PORT = parseInt(process.env.PORT || "8080", 10);
+
+//   const server = app
+//     .listen(PORT, "0.0.0.0", () => {
+//       console.log(`Server running on port ${PORT}`);
+//     })
+//     .on("error", (err) => {
+//       console.error(`Port ${PORT} in use or invalid:`, err);
+//       PORT++;
+//       if (PORT < 0 || PORT > 65535) throw new Error("Port out of range");
+//       app.listen(PORT, () => {
+//         console.log(`Server fallback started on port ${PORT}`);
+//       });
+//     });
+
+//   // Add graceful shutdown
+//   process.on("SIGTERM", () => {
+//     console.log("SIGTERM received, shutting down gracefully");
+//     server.close(() => {
+//       console.log("Server closed");
+//     });
+//   });
+// }
+
+exports.api = onRequest(
+  {
+    memory: "1GB",
+    timeoutSeconds: 60,
+    minInstances: 0,
+    maxInstances: 10,
+  },
+  app
+);

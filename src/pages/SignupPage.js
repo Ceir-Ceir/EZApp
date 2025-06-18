@@ -13,20 +13,30 @@ const Signup = () => {
     const { signup, currentUser } = useAuth();
 
     // Redirect if already logged in
-    useEffect(() => {
-        if (currentUser) {
-            // Check if there's a pending subscription
-            const subscriptionStatus = sessionStorage.getItem('subscriptionStatus');
-            if (subscriptionStatus === 'success') {
-                // Clear the stored status
-                sessionStorage.removeItem('subscriptionStatus');
-                // Navigate to subscription status to complete the process
-                navigate('/subscription-status?status=success');
-            } else {
-                navigate('/subscribe');
-            }
-        }
-    }, [currentUser, navigate]);
+   useEffect(() => {
+  if (currentUser) {
+    console.log("[Step 1] Current user is present:", currentUser.uid);
+
+    const subscriptionStatus = sessionStorage.getItem('subscriptionStatus');
+    console.log("[Step 2] Retrieved subscriptionStatus from sessionStorage:", subscriptionStatus);
+
+    if (subscriptionStatus === 'success') {
+      console.log("[Step 3] Subscription status is 'success'. Clearing and redirecting...");
+
+      sessionStorage.removeItem('subscriptionStatus');
+      console.log("[Step 4] subscriptionStatus removed from sessionStorage");
+
+      navigate('/subscription-status?status=success');
+      console.log("[Step 5] Navigated to /subscription-status?status=success");
+    } else {
+      console.log("[Step 6] No successful subscription found. Redirecting to /subscribe...");
+      navigate('/subscribe');
+    }
+  } else {
+    console.log("[Step 0] No current user. Skipping subscription check.");
+  }
+}, [currentUser, navigate]);
+
 
     // Handle Email/Password Signup
     const handleSubmit = async (e) => {

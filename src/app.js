@@ -11,6 +11,7 @@ import DashboardView from "./pages/DashboardView.js";
 import JobSearch from "./pages/JobSearch.js";
 import MainAppForm from "./pages/MainAppForms.js";
 import SubscriptionStatus from "./pages/SubscriptionStatus.js";
+import PaymentSuccess from "./pages/PaymentSuccess.js";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/subscription-flow" element={<SubFlow />} />
           <Route path="/main-app-forms" element={<MainAppForm />} />
           <Route path="/subscription-status" element={<SubscriptionStatus />} />
+          <Route path="/payment-success" element={PaymentSuccess} />
           {/* Main App with Nested Routes */}
           <Route path="/main-app" element={<MainApp />}>
             <Route index element={<MainAppForm />} />
