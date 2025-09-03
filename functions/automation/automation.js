@@ -1,6 +1,7 @@
 // functions/automation.js
 const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
-const fetch = require("node-fetch");
+const fetch = require('node-fetch');
+
 
 exports.runPythonAutomation = onDocumentUpdated("users/{userId}", async (event) => {
   const userId = event.params.userId;

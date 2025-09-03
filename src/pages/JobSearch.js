@@ -376,6 +376,200 @@ const salaryRangeOptions = [ // salary range options here
   { value: "150k+", label: "$150,000+" }
 ];
 
+const JobPreferencesForm = ({ jobPreferences, setJobPreferences }) => {
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Job Title</label>
+        <Select
+          value={jobPreferences.jobTitle ? { value: jobPreferences.jobTitle, label: jobPreferences.jobTitle } : null}
+          onChange={(selected) => setJobPreferences({ ...jobPreferences, jobTitle: selected ? selected.value : '' })}
+          options={jobOptions}
+          className="mt-1"
+          placeholder="Select a job title"
+          isClearable
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Preferred Location</label>
+        <input
+          type="text"
+          value={jobPreferences.location}
+          onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          placeholder="Enter preferred location"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Salary Range</label>
+        <Select
+          value={jobPreferences.salaryRange ? { value: jobPreferences.salaryRange, label: jobPreferences.salaryRange } : null}
+          onChange={(selected) => setJobPreferences({ ...jobPreferences, salaryRange: selected ? selected.value : '' })}
+          options={[
+            { value: "0-50000", label: "$0 - $50,000" },
+            { value: "50000-100000", label: "$50,000 - $100,000" },
+            { value: "100000-150000", label: "$100,000 - $150,000" },
+            { value: "150000-200000", label: "$150,000 - $200,000" },
+            { value: "200000+", label: "$200,000+" }
+          ]}
+          className="mt-1"
+          placeholder="Select salary range"
+          isClearable
+        />
+      </div>
+    </div>
+  );
+};
+
+const SkillsAndSoftwareForm = ({ skills, setSkills, software, setSoftware, handleAddSkill, handleRemoveSkill, handleAddSoftware, handleRemoveSoftware }) => {
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Skills</label>
+        <div className="mt-1">
+          <input
+            type="text"
+            value={skills.newSkill}
+            onChange={(e) => setSkills({ ...skills, newSkill: e.target.value })}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddSkill(e);
+              }
+            }}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Type a skill and press Enter"
+          />
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {skills.list.map((skill, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+            >
+              {skill}
+              <button
+                type="button"
+                onClick={() => handleRemoveSkill(skill)}
+                className="ml-2 inline-flex items-center p-0.5 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
+              >
+                <span className="sr-only">Remove skill</span>
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Software and Tools</label>
+        <div className="mt-1">
+          <input
+            type="text"
+            value={software.newSoftware}
+            onChange={(e) => setSoftware({ ...software, newSoftware: e.target.value })}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddSoftware();
+              }
+            }}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Type a software/tool and press Enter"
+          />
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {software.list.map((item, index) => (
+            <span
+              key={index}
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+            >
+              {item}
+              <button
+                type="button"
+                onClick={() => handleRemoveSoftware(index)}
+                className="ml-2 inline-flex items-center p-0.5 rounded-full text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none"
+              >
+                <span className="sr-only">Remove software</span>
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdditionalInfoForm = ({ additionalInfo, setAdditionalInfo, handleAddCertification, handleRemoveCertification }) => {
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Certifications</label>
+        <div className="mt-1 space-y-4">
+          {additionalInfo.certifications.map((cert, index) => (
+            <div key={index} className="flex gap-4 items-start">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={cert.organization}
+                  onChange={(e) => {
+                    const newCerts = [...additionalInfo.certifications];
+                    newCerts[index] = { ...newCerts[index], organization: e.target.value };
+                    setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
+                  }}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  placeholder="Certification Organization"
+                />
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={cert.issueDate}
+                  onChange={(e) => {
+                    const newCerts = [...additionalInfo.certifications];
+                    newCerts[index] = { ...newCerts[index], issueDate: e.target.value };
+                    setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
+                  }}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  placeholder="Issue Date"
+                />
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={cert.relevantLink}
+                  onChange={(e) => {
+                    const newCerts = [...additionalInfo.certifications];
+                    newCerts[index] = { ...newCerts[index], relevantLink: e.target.value };
+                    setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
+                  }}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  placeholder="Relevant Link"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleRemoveCertification(index)}
+                className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <span className="sr-only">Remove certification</span>
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={handleAddCertification}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Add Certification
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const JobSearch = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -389,8 +583,14 @@ const JobSearch = () => {
     location: "",
     salaryExpectation: { min: "", max: "" },
   });
-  const [skills, setSkills] = useState([]);
-  const [software, setSoftware] = useState([{ tool: "", proficiency: "" }]);
+  const [skills, setSkills] = useState({
+    newSkill: "",
+    list: []
+  });
+  const [software, setSoftware] = useState({
+    newSoftware: "",
+    list: []
+  });
   const [additionalInfo, setAdditionalInfo] = useState({
     certifications: [{ name: "", organization: "", issueDate: "", expirationDate: "" }],
     willingToRelocate: "",
@@ -425,8 +625,12 @@ const JobSearch = () => {
       const newSkill = e.target.value.trim();
       setSkills((prevSkills) => {
         // Prevent adding duplicate skills
-        if (!prevSkills.includes(newSkill)) {
-          return [...prevSkills, newSkill];
+        if (!prevSkills.list.includes(newSkill)) {
+          return {
+            ...prevSkills,
+            list: [...prevSkills.list, newSkill],
+            newSkill: ""
+          };
         }
         return prevSkills;
       });
@@ -440,7 +644,13 @@ const JobSearch = () => {
   };
 
   const handleAddSoftware = () => {
-    setSoftware([...software, { tool: "", proficiency: "" }]);
+    if (software.newSoftware.trim() !== "") {
+      setSoftware({
+        ...software,
+        list: [...software.list, software.newSoftware],
+        newSoftware: ""
+      });
+    }
   };
 
   const handleRemoveSoftware = (index) => {
@@ -744,206 +954,12 @@ const JobSearch = () => {
     }, 2000);
   };
 
-  const JobPreferencesForm = ({ jobPreferences, setJobPreferences }) => {
-    return (
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Job Title</label>
-          <Select
-            value={jobPreferences.jobTitle ? { value: jobPreferences.jobTitle, label: jobPreferences.jobTitle } : null}
-            onChange={(selected) => setJobPreferences({ ...jobPreferences, jobTitle: selected ? selected.value : '' })}
-            options={jobOptions}
-            className="mt-1"
-            placeholder="Select a job title"
-            isClearable
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Preferred Location</label>
-          <input
-            type="text"
-            value={jobPreferences.location}
-            onChange={(e) => setJobPreferences({ ...jobPreferences, location: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            placeholder="Enter preferred location"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Salary Range</label>
-          <Select
-            value={jobPreferences.salaryRange ? { value: jobPreferences.salaryRange, label: jobPreferences.salaryRange } : null}
-            onChange={(selected) => setJobPreferences({ ...jobPreferences, salaryRange: selected ? selected.value : '' })}
-            options={[
-              { value: "0-50000", label: "$0 - $50,000" },
-              { value: "50000-100000", label: "$50,000 - $100,000" },
-              { value: "100000-150000", label: "$100,000 - $150,000" },
-              { value: "150000-200000", label: "$150,000 - $200,000" },
-              { value: "200000+", label: "$200,000+" }
-            ]}
-            className="mt-1"
-            placeholder="Select salary range"
-            isClearable
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const SkillsAndSoftwareForm = ({ skills, setSkills, software, setSoftware, handleAddSoftware, handleRemoveSoftware }) => {
-    return (
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Skills</label>
-          <div className="mt-1">
-            <input
-              type="text"
-              value={skills.newSkill}
-              onChange={(e) => setSkills({ ...skills, newSkill: e.target.value })}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddSkill(e);
-                }
-              }}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Type a skill and press Enter"
-            />
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {skills.list.map((skill, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-              >
-                {skill}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSkill(skill)}
-                  className="ml-2 inline-flex items-center p-0.5 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
-                >
-                  <span className="sr-only">Remove skill</span>
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Software and Tools</label>
-          <div className="mt-1">
-            <input
-              type="text"
-              value={software.newSoftware}
-              onChange={(e) => setSoftware({ ...software, newSoftware: e.target.value })}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddSoftware();
-                }
-              }}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Type a software/tool and press Enter"
-            />
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {software.list.map((item, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
-              >
-                {item}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSoftware(index)}
-                  className="ml-2 inline-flex items-center p-0.5 rounded-full text-green-400 hover:bg-green-200 hover:text-green-500 focus:outline-none"
-                >
-                  <span className="sr-only">Remove software</span>
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const AdditionalInfoForm = ({ additionalInfo, setAdditionalInfo, handleAddCertification, handleRemoveCertification }) => {
-    return (
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Certifications</label>
-          <div className="mt-1 space-y-4">
-            {additionalInfo.certifications.map((cert, index) => (
-              <div key={index} className="flex gap-4 items-start">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={cert.organization}
-                    onChange={(e) => {
-                      const newCerts = [...additionalInfo.certifications];
-                      newCerts[index] = { ...newCerts[index], organization: e.target.value };
-                      setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
-                    }}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Certification Organization"
-                  />
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={cert.issueDate}
-                    onChange={(e) => {
-                      const newCerts = [...additionalInfo.certifications];
-                      newCerts[index] = { ...newCerts[index], issueDate: e.target.value };
-                      setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
-                    }}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Issue Date"
-                  />
-                </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={cert.relevantLink}
-                    onChange={(e) => {
-                      const newCerts = [...additionalInfo.certifications];
-                      newCerts[index] = { ...newCerts[index], relevantLink: e.target.value };
-                      setAdditionalInfo({ ...additionalInfo, certifications: newCerts });
-                    }}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Relevant Link"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCertification(index)}
-                  className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  <span className="sr-only">Remove certification</span>
-                  ×
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={handleAddCertification}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Add Certification
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return <JobPreferencesForm jobPreferences={jobPreferences} setJobPreferences={setJobPreferences} />;
       case 2:
-        return <SkillsAndSoftwareForm skills={skills} setSkills={setSkills} software={software} setSoftware={setSoftware} handleAddSoftware={handleAddSoftware} handleRemoveSoftware={handleRemoveSoftware} />;
+        return <SkillsAndSoftwareForm skills={skills} setSkills={setSkills} software={software} setSoftware={setSoftware} handleAddSkill={handleAddSkill} handleRemoveSkill={handleRemoveSkill} handleAddSoftware={handleAddSoftware} handleRemoveSoftware={handleRemoveSoftware} />;
       case 3:
         return <AdditionalInfoForm additionalInfo={additionalInfo} setAdditionalInfo={setAdditionalInfo} handleAddCertification={handleAddCertification} handleRemoveCertification={handleRemoveCertification} />;
       default:
@@ -985,22 +1001,40 @@ const JobSearch = () => {
 
           <form onSubmit={handleSubmit}>
             {renderStep()}
-
-            {currentStep === 3 && (
-              <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-between">
+              {currentStep > 1 && (
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 ${
-                    isButtonClicked
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  type="button"
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                  className="px-6 py-3 rounded-lg text-gray-700 font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200"
                 >
-                  {buttonText}
+                  Previous
                 </button>
+              )}
+              <div className="flex-1 flex justify-end">
+                {currentStep < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(currentStep + 1)}
+                    className="px-6 py-3 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 transition-all duration-200"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 ${
+                      isButtonClicked
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {buttonText}
+                  </button>
+                )}
               </div>
-            )}
+            </div>
           </form>
         </div>
       </div>
